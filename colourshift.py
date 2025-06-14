@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import colorchooser
 import numpy as np
 import colour
+from colour.appearance import XYZ_to_CIECAM02
+from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS
+from colour.difference import delta_E_CAM02UCS
+
 
 def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
@@ -17,39 +21,30 @@ def compute_appearance_difference(base_rgb, original_surround_rgb):
     base_XYZ = rgb_to_XYZ(base_rgb)
     original_surround_XYZ = rgb_to_XYZ(original_surround_rgb)
 
-    vc = colour.appearance.VIEWING_CONDITIONS_CIECAM02["Average"]
-    appearance_1 = colour.appearance.XYZ_to_CIECAM02(base_XYZ, original_surround_XYZ, L_A=64, Y_b=20, surround=vc)
-    J1, C1, h1 = appearance_1.J, appearance_1.C, appearance_1.h
+    vc = colour.VIEWING_CONDITIONS_CIECAM02['Average']
+    Y_b = 20
+    L_A = 64
+
+    base_spec = XYZ_to_CIECAM02(base_XYZ, original_surround_XYZ, Y_b, L_A, surround=vc)
+    base_JMh = [base_spec.J, base_spec.M, base_spec.h]
+    base_UCS = JMh_CIECAM02_to_CAM02UCS(base_JMh)
 
     results = []
     for r in np.linspace(0, 1, 12):
         for g in np.linspace(0, 1, 12):
             for b in np.linspace(0, 1, 12):
-                surround_rgb = [r, g, b]
-                surround_XYZ = rgb_to_XYZ(surround_rgb)
-
+                candidate_rgb = [r, g, b]
                 try:
-                    appearance_2 = colour.appearance.XYZ_to_CIECAM02(
-                        base_XYZ, surround_XYZ, L_A=64, Y_b=20, surround=vc
-                    )
-                    J2, C2, h2 = appearance_2.J, appearance_2.C, appearance_2.h
-
-                    if any(v is None or not np.isfinite(v) for v in [J1, C1, h1, J2, C2, h2]):
+                    surround_XYZ = rgb_to_XYZ(candidate_rgb)
+                    candidate_spec = XYZ_to_CIECAM02(base_XYZ, surround_XYZ, Y_b, L_A, surround=vc)
+                    candidate_JMh = [candidate_spec.J, candidate_spec.M, candidate_spec.h]
+                    candidate_UCS = JMh_CIECAM02_to_CAM02UCS(candidate_JMh)
+                    dE = delta_E_CAM02UCS(base_UCS, candidate_UCS)
+                    if not np.isfinite(dE):
                         continue
-
-                    h_diff = min(abs(h1 - h2), 360 - abs(h1 - h2))
-
-                    J_diff = np.clip(J1 - J2, -1e3, 1e3)
-                    C_diff = np.clip(C1 - C2, -1e3, 1e3)
-                    h_diff = np.clip(h_diff, 0, 360)
-
-                    dE = np.sqrt(J_diff**2 + C_diff**2 + h_diff**2)
-                    if not np.isfinite(dE) or dE > 1e4:
-                        continue
-                    results.append((surround_rgb, dE))
-
+                    results.append((candidate_rgb, dE))
                 except Exception:
-                    continue  # Skip colors that cause math errors
+                    continue
 
     results.sort(key=lambda x: -x[1])
     return results[:3]
@@ -58,8 +53,8 @@ class ColourShiftApp:
     def __init__(self, root):
         self.root = root
         self.root.title("ColourShift")
-        self.base_color = "#ff0000"
-        self.original_surround = "#808080"
+        self.base_color = "#950000"
+        self.original_surround = "#964301"
 
         self.top_frame = tk.Frame(root)
         self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
