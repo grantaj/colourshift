@@ -67,18 +67,17 @@ class ColourShiftApp:
         self.preview_frame = tk.Frame(root, bg="#808080")
         self.preview_frame.pack(expand=True, fill=tk.BOTH)
 
-        self.base_display = tk.Label(self.top_frame, text=f"Base: {self.base_color}", bg=self.base_color, fg="white", width=15)
+        self.base_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
+        self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, outline='')
+        self.base_display.bind("<Button-1>", lambda e: self.pick_base_color())
         self.base_display.pack(side=tk.LEFT, padx=5)
 
-        self.surround_display = tk.Label(self.top_frame, text=f"Surround: {self.original_surround}", bg=self.original_surround, fg="white", width=15)
+        self.surround_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
+        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, outline='')
+        self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
 
-        self.base_btn = tk.Button(self.top_frame, text="Pick Base Color", command=self.pick_base_color)
-        self.base_btn.pack(side=tk.LEFT, padx=10)
-
-        self.surround_btn = tk.Button(self.top_frame, text="Pick Surround Color", command=self.pick_surround_color)
-        self.surround_btn.pack(side=tk.LEFT, padx=10)
-
+        
         self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
 
@@ -86,13 +85,22 @@ class ColourShiftApp:
         color = colorchooser.askcolor(title="Pick Base Color")
         if color[1]:
             self.base_color = color[1]
-            self.base_display.config(text=f"Base: {self.base_color}", bg=self.base_color)
+            self.base_display.delete("all")
+            self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, outline='')
 
     def pick_surround_color(self):
         color = colorchooser.askcolor(title="Pick Surround Color")
         if color[1]:
             self.original_surround = color[1]
-            self.surround_display.config(text=f"Surround: {self.original_surround}", bg=self.original_surround)
+            self.surround_display.delete("all")
+            self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, outline='')
+
+    def set_surround(self, hex_color):
+        self.original_surround = hex_color
+        self.surround_display.config(text=f"Surround: {self.original_surround}", bg=self.original_surround)
+
+    def handle_patch_click(self, hex_color, event=None):
+        self.set_surround(hex_color)
 
     def solve(self):
         base_rgb = hex_to_rgb(self.base_color)
@@ -103,9 +111,19 @@ class ColourShiftApp:
             widget.destroy()
 
         for i, (rgb, dE) in enumerate(results):
-            patch = tk.Frame(self.preview_frame, bg=rgb_to_hex(rgb), width=150, height=150)
-            patch.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
-            tk.Label(patch, text=f"ΔAppearance = {dE:.2f}", bg=rgb_to_hex(rgb), fg="white").pack()
+            hex_col = rgb_to_hex(rgb)
+
+            patch_frame = tk.Frame(self.preview_frame)
+            patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
+
+            from functools import partial
+            canvas = tk.Canvas(patch_frame, width=100, height=100, highlightthickness=1, highlightbackground="black")
+            canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, outline="")
+            canvas.bind("<Button-1>", partial(self.handle_patch_click, hex_col))
+            canvas.pack()
+
+            label = tk.Label(patch_frame, text=f"ΔAppearance = {dE:.2f}", bg="white", fg="black")
+            label.pack()
 
 if __name__ == "__main__":
     root = tk.Tk()
