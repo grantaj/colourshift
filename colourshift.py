@@ -68,12 +68,12 @@ class ColourShiftApp:
         self.preview_frame.pack(expand=True, fill=tk.BOTH)
 
         self.base_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
-        self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, outline='')
+        self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
         self.base_display.bind("<Button-1>", lambda e: self.pick_base_color())
         self.base_display.pack(side=tk.LEFT, padx=5)
 
         self.surround_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
-        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, outline='')
+        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
         self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
 
@@ -85,28 +85,28 @@ class ColourShiftApp:
         if color[1]:
             self.base_color = color[1]
             self.base_display.delete("all")
-            self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, outline='')
+            self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
 
     def pick_surround_color(self):
         color = colorchooser.askcolor(title="Pick Surround Color")
         if color[1]:
             self.original_surround = color[1]
             self.surround_display.delete("all")
-            self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, outline='')
+            self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
 
     def set_surround(self, hex_color):
         self.original_surround = hex_color
         self.surround_display.delete("all")
-        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, outline='')
+        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
 
     def handle_patch_click(self, hex_color, event=None):
         comparison_window = tk.Toplevel(self.root)
         comparison_window.title("Perceptual Shift Comparison")
 
-        left_canvas = tk.Canvas(comparison_window)
+        left_canvas = tk.Canvas(comparison_window, highlightthickness=0, bd=0)
         left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        right_canvas = tk.Canvas(comparison_window)
+        right_canvas = tk.Canvas(comparison_window, highlightthickness=0, bd=0)
         right_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         def draw_comparison():
@@ -118,11 +118,11 @@ class ColourShiftApp:
             for canvas in (left_canvas, right_canvas):
                 canvas.delete("all")
 
-            left_canvas.create_rectangle(0, 0, half_w, h, fill=self.original_surround, outline="")
-            left_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, outline="black")
+            left_canvas.create_rectangle(0, 0, half_w, h, fill=self.original_surround, width=0)
+            left_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, width=0)
 
-            right_canvas.create_rectangle(0, 0, half_w, h, fill=hex_color, outline="")
-            right_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, outline="black")
+            right_canvas.create_rectangle(0, 0, half_w, h, fill=hex_color, width=0)
+            right_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, width=0)
 
         def schedule_draw(_event=None):
             comparison_window.after_idle(draw_comparison)
@@ -146,7 +146,7 @@ class ColourShiftApp:
 
             from functools import partial
             canvas = tk.Canvas(patch_frame, width=100, height=100, highlightthickness=1, highlightbackground="black")
-            canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, outline="")
+            canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, width=0)
             canvas.bind("<Button-1>", partial(self.handle_patch_click, hex_col))
             canvas.pack()
 
