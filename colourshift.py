@@ -1,142 +1,66 @@
-import streamlit as st
-import numpy as np
+import tkinter as tk
+from tkinter import colorchooser
 from skimage.color import rgb2lab, deltaE_ciede2000
+import numpy as np
 
-# --- Sidebar ---
-st.sidebar.title("Colourshift")
-feature = st.sidebar.selectbox(
-    "Tool",
-    ["Maximal Shift", 
-     "Compensation", 
-     "Compare", 
-     "Gradient", 
-     "Reversibility", 
-     "Export"]
-)
 
-base_color = st.sidebar.color_picker("Base Color", "#ff0000")
-surround_color = st.sidebar.color_picker("Surround Color", "#ffffff")
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return [int(hex_color[i:i+2], 16)/255.0 for i in (0, 2, 4)]
 
-bg_option = st.sidebar.selectbox("Background", ["Neutral Gray", "White", "Black"])
-bg_color = {"Neutral Gray": "#808080", "White": "#ffffff", "Black": "#000000"}[bg_option]
-text_color = {"Neutral Gray": "#e0e0e0", "White": "#808080", "Black": "#e0e0e0"}[bg_option]  # Lower contrast
+def rgb_to_hex(rgb):
+    return '#{:02x}{:02x}{:02x}'.format(*(int(255*x) for x in rgb))
 
-diversity_metric = st.sidebar.selectbox("Diversity Metric", ["ΔE2000", "Hue Angle", "RGB Distance"])
-
-# Adjust threshold label and range depending on metric
-if diversity_metric == "Hue Angle":
-    diversity_threshold = st.sidebar.slider("Minimum Hue Angle Difference (°)", 0.0, 180.0, 30.0, 1.0)
-elif diversity_metric == "RGB Distance":
-    diversity_threshold = st.sidebar.slider("Minimum RGB Distance (0–1 scale)", 0.0, 1.5, 0.2, 0.01)
-else:
-    diversity_threshold = st.sidebar.slider("Minimum ΔE2000 Difference", 0.0, 50.0, 5.0, 0.5)
-
-solve = st.sidebar.button("Solve")
-st.sidebar.button("Reset")
-
-# --- Set background and text color to cover entire viewport and hide Streamlit header ---
-st.markdown(
-    f"""
-    <style>
-    html, body, .block-container, .main, .stApp {{
-        background-color: {bg_color} !important;
-        color: {text_color} !important;
-        height: 100%;
-        min-height: 100vh;
-    }}
-
-    header[data-testid="stHeader"] {{
-        display: none;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# --- Main UI ---
-st.title("Color Appearance Simulator")
-
-st.header(f"{feature}")
-st.write("This tool simulates how color perception changes depending on the surrounding color context.")
-
-col1, col2 = st.columns(2)
-with col1:
-    st.subheader("Base Color")
-    st.markdown(
-        f"<div style='width:150px; height:150px; background-color:{base_color}; border:0px solid #000;'></div>",
-        unsafe_allow_html=True
-    )
-
-with col2:
-    st.subheader("Surround Color")
-    st.markdown(
-        f"<div style='width:150px; height:150px; background-color:{surround_color}; border:0px solid #000;'></div>",
-        unsafe_allow_html=True
-    )
-
-st.markdown("---")
-st.subheader("Results")
-
-if feature == "Maximal Shift" and solve:
-    def hex_to_rgb(h):
-        h = h.lstrip('#')
-        return [int(h[i:i+2], 16)/255.0 for i in (0, 2, 4)]
-
-    def rgb_to_hue(rgb):
-        r, g, b = rgb
-        max_c = max(rgb)
-        min_c = min(rgb)
-        if max_c == min_c:
-            return 0.0
-        if max_c == r:
-            hue = (g - b) / (max_c - min_c) % 6
-        elif max_c == g:
-            hue = (b - r) / (max_c - min_c) + 2
-        else:
-            hue = (r - g) / (max_c - min_c) + 4
-        return (hue * 60.0) % 360
-
-    def hue_distance(h1, h2):
-        return min(abs(h1 - h2), 360 - abs(h1 - h2))
-
-    base_rgb = np.array(hex_to_rgb(base_color)).reshape(1, 1, 3)
-    base_lab = rgb2lab(base_rgb)
-
+def compute_maximal_shifts(base_rgb):
+    base_lab = rgb2lab(np.array(base_rgb).reshape(1, 1, 3))
     candidates = []
     for r in np.linspace(0, 1, 12):
         for g in np.linspace(0, 1, 12):
             for b in np.linspace(0, 1, 12):
-                surround_rgb = np.array([[[r, g, b]]])
-                surround_lab = rgb2lab(surround_rgb)
-                delta = deltaE_ciede2000(base_lab, surround_lab)[0][0]
-                candidates.append(((r, g, b), delta))
-
+                rgb = [r, g, b]
+                lab = rgb2lab(np.array(rgb).reshape(1, 1, 3))
+                delta = deltaE_ciede2000(base_lab, lab)[0][0]
+                candidates.append((rgb, delta))
     candidates.sort(key=lambda x: -x[1])
-    top_colours = []
-    for rgb, delta in candidates:
-        def is_diverse(new_rgb):
-            if diversity_metric == "ΔE2000":
-                lab = rgb2lab(np.array([[new_rgb]]))
-                return all(deltaE_ciede2000(lab, rgb2lab(np.array([[c]])))[0][0] > diversity_threshold for c, _ in top_colours)
-            elif diversity_metric == "Hue Angle":
-                hue = rgb_to_hue(new_rgb)
-                return all(hue_distance(rgb_to_hue(c), hue) > diversity_threshold for c, _ in top_colours)
-            elif diversity_metric == "RGB Distance":
-                return all(np.linalg.norm(np.array(new_rgb) - np.array(c)) > diversity_threshold for c, _ in top_colours)
-            return True
+    return candidates[:3]
 
-        if is_diverse(rgb):
-            top_colours.append((rgb, delta))
-        if len(top_colours) == 3:
-            break
+class ColourShiftApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("ColourShift")
+        self.base_color = "#ff0000"
 
-    st.write("### Top 3 Surrounds Causing Maximal Shift")
-    for i, (rgb, delta) in enumerate(top_colours):
-        hex_code = '#{:02x}{:02x}{:02x}'.format(*(int(255*x) for x in rgb))
-        st.markdown(f"**{i+1}. ΔE = {delta:.2f}** – {hex_code}")
-        st.markdown(
-            f"<div style='width:150px; height:50px; background-color:{hex_code}; border:1px solid #fff;'></div>",
-            unsafe_allow_html=True
-        )
-else:
-    st.write("ΔE, computed results, or image outputs will appear here based on feature.")
+        self.top_frame = tk.Frame(root)
+        self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+        self.preview_frame = tk.Frame(root, bg="#808080")
+        self.preview_frame.pack(expand=True, fill=tk.BOTH)
+
+        self.color_btn = tk.Button(self.top_frame, text="Choose Base Color", command=self.pick_base_color)
+        self.color_btn.pack(side=tk.LEFT, padx=10)
+
+        self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
+        self.solve_btn.pack(side=tk.LEFT, padx=10)
+
+    def pick_base_color(self):
+        color = colorchooser.askcolor(title="Pick Base Color")
+        if color[1]:
+            self.base_color = color[1]
+
+    def solve(self):
+        base_rgb = hex_to_rgb(self.base_color)
+        results = compute_maximal_shifts(base_rgb)
+
+        for widget in self.preview_frame.winfo_children():
+            widget.destroy()
+
+        for i, (rgb, delta) in enumerate(results):
+            patch = tk.Frame(self.preview_frame, bg=rgb_to_hex(rgb), width=150, height=150)
+            patch.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
+            tk.Label(patch, text=f"ΔE = {delta:.2f}", bg=rgb_to_hex(rgb), fg="white").pack()
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ColourShiftApp(root)
+    root.mainloop()
