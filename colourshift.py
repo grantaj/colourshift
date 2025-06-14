@@ -21,7 +21,15 @@ bg_option = st.sidebar.selectbox("Background", ["Neutral Gray", "White", "Black"
 bg_color = {"Neutral Gray": "#808080", "White": "#ffffff", "Black": "#000000"}[bg_option]
 text_color = {"Neutral Gray": "#e0e0e0", "White": "#808080", "Black": "#e0e0e0"}[bg_option]  # Lower contrast
 
-diversity_threshold = st.sidebar.slider("Perceptual Diversity Threshold (ΔE)", 0.0, 50.0, 5.0, 0.5)
+diversity_metric = st.sidebar.selectbox("Diversity Metric", ["ΔE2000", "Hue Angle", "RGB Distance"])
+
+# Adjust threshold label and range depending on metric
+if diversity_metric == "Hue Angle":
+    diversity_threshold = st.sidebar.slider("Minimum Hue Angle Difference (°)", 0.0, 180.0, 30.0, 1.0)
+elif diversity_metric == "RGB Distance":
+    diversity_threshold = st.sidebar.slider("Minimum RGB Distance (0–1 scale)", 0.0, 1.5, 0.2, 0.01)
+else:
+    diversity_threshold = st.sidebar.slider("Minimum ΔE2000 Difference", 0.0, 50.0, 5.0, 0.5)
 
 solve = st.sidebar.button("Solve")
 st.sidebar.button("Reset")
@@ -74,6 +82,23 @@ if feature == "Maximal Shift" and solve:
         h = h.lstrip('#')
         return [int(h[i:i+2], 16)/255.0 for i in (0, 2, 4)]
 
+    def rgb_to_hue(rgb):
+        r, g, b = rgb
+        max_c = max(rgb)
+        min_c = min(rgb)
+        if max_c == min_c:
+            return 0.0
+        if max_c == r:
+            hue = (g - b) / (max_c - min_c) % 6
+        elif max_c == g:
+            hue = (b - r) / (max_c - min_c) + 2
+        else:
+            hue = (r - g) / (max_c - min_c) + 4
+        return (hue * 60.0) % 360
+
+    def hue_distance(h1, h2):
+        return min(abs(h1 - h2), 360 - abs(h1 - h2))
+
     base_rgb = np.array(hex_to_rgb(base_color)).reshape(1, 1, 3)
     base_lab = rgb2lab(base_rgb)
 
@@ -86,12 +111,21 @@ if feature == "Maximal Shift" and solve:
                 delta = deltaE_ciede2000(base_lab, surround_lab)[0][0]
                 candidates.append(((r, g, b), delta))
 
-    # Sort by deltaE and filter for perceptual diversity
     candidates.sort(key=lambda x: -x[1])
     top_colours = []
     for rgb, delta in candidates:
-        lab = rgb2lab(np.array([[rgb]]))
-        if all(deltaE_ciede2000(lab, rgb2lab(np.array([[c]])))[0][0] > diversity_threshold for c, _ in top_colours):
+        def is_diverse(new_rgb):
+            if diversity_metric == "ΔE2000":
+                lab = rgb2lab(np.array([[new_rgb]]))
+                return all(deltaE_ciede2000(lab, rgb2lab(np.array([[c]])))[0][0] > diversity_threshold for c, _ in top_colours)
+            elif diversity_metric == "Hue Angle":
+                hue = rgb_to_hue(new_rgb)
+                return all(hue_distance(rgb_to_hue(c), hue) > diversity_threshold for c, _ in top_colours)
+            elif diversity_metric == "RGB Distance":
+                return all(np.linalg.norm(np.array(new_rgb) - np.array(c)) > diversity_threshold for c, _ in top_colours)
+            return True
+
+        if is_diverse(rgb):
             top_colours.append((rgb, delta))
         if len(top_colours) == 3:
             break
