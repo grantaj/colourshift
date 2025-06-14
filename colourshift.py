@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import colorchooser
+from tkinter import colorchooser, ttk
 import numpy as np
 import colour
 from colour.appearance import XYZ_to_CIECAM02
@@ -7,6 +7,7 @@ from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS
 from colour.difference import delta_E_CAM02UCS
 import warnings
 
+DEBUG = False
 
 def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
@@ -17,6 +18,14 @@ def rgb_to_hex(rgb):
 
 def rgb_to_XYZ(rgb):
     return colour.sRGB_to_XYZ(rgb)
+
+def is_valid_JMh(J, M, h):
+    return (
+        np.isfinite(J) and np.isfinite(M) and np.isfinite(h) and
+        0 <= J <= 100 and
+        0 <= M <= 100 and
+        0 <= h <= 360
+    )
 
 def compute_appearance_difference(base_rgb, original_surround_rgb, min_delta=10.0, max_candidates=3):
     base_XYZ = rgb_to_XYZ(base_rgb)
@@ -30,7 +39,11 @@ def compute_appearance_difference(base_rgb, original_surround_rgb, min_delta=10.
     base_JMh = [base_spec.J, base_spec.M, base_spec.h]
     base_UCS = JMh_CIECAM02_to_CAM02UCS(base_JMh)
 
-    results = []
+    if DEBUG is True:
+        print("Base JMh:", base_JMh)
+        print("Base UCS:", base_UCS)
+
+    candidates = []
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         for r in np.linspace(0, 1, 12):
@@ -40,28 +53,36 @@ def compute_appearance_difference(base_rgb, original_surround_rgb, min_delta=10.
                     try:
                         surround_XYZ = rgb_to_XYZ(candidate_rgb)
                         candidate_spec = XYZ_to_CIECAM02(base_XYZ, surround_XYZ, Y_b, L_A, surround=vc)
-                        candidate_JMh = [candidate_spec.J, candidate_spec.M, candidate_spec.h]
-                        if not all(np.isfinite(candidate_JMh)):
+                        J, M, h = candidate_spec.J, candidate_spec.M, candidate_spec.h
+                        if not is_valid_JMh(J, M, h):
                             continue
+                        candidate_JMh = [J, M, h]
                         candidate_UCS = JMh_CIECAM02_to_CAM02UCS(candidate_JMh)
                         if not all(np.isfinite(candidate_UCS)):
                             continue
-                        dE = delta_E_CAM02UCS(base_UCS, candidate_UCS)
-                        if not np.isfinite(dE):
+                        shift_dE = delta_E_CAM02UCS(base_UCS, candidate_UCS)
+                        if not np.isfinite(shift_dE):
                             continue
-                        results.append((candidate_rgb, dE, candidate_UCS))
-                    except Exception:
+                        if DEBUG is True:
+                            print(f"Candidate {rgb_to_hex(candidate_rgb)} - JMh: {candidate_JMh}, UCS: {candidate_UCS}, ΔE: {shift_dE:.2f}")
+                        candidates.append((candidate_rgb, shift_dE, candidate_UCS))
+                    except Exception as e:
+                        print(f"Error with {candidate_rgb}: {e}")
                         continue
 
-    results.sort(key=lambda x: -x[1])
+    candidates.sort(key=lambda x: -x[1])
+
     filtered = []
-    for rgb, dE, ucs in results:
-        if all(delta_E_CAM02UCS(ucs, prev_ucs) >= min_delta for _, prev_ucs in filtered):
-            filtered.append((rgb, ucs))
-        if len(filtered) == max_candidates:
+    for rgb, shift_dE, ucs in candidates:
+        deltas = [delta_E_CAM02UCS(ucs, other_ucs) for _, _, other_ucs in filtered]
+        if DEBUG is True:
+            print(f"Testing candidate {rgb_to_hex(rgb)} with ΔE distances to existing: {deltas}")
+        if all(d >= min_delta for d in deltas):
+            filtered.append((rgb, shift_dE, ucs))
+        if len(filtered) >= max_candidates:
             break
 
-    return [(rgb, delta_E_CAM02UCS(base_UCS, ucs)) for rgb, ucs in filtered]
+    return [(rgb, delta_E_CAM02UCS(base_UCS, ucs)) for rgb, _, ucs in filtered]
 
 class ColourShiftApp:
     def __init__(self, root):
@@ -72,11 +93,21 @@ class ColourShiftApp:
 
         self.min_delta = tk.DoubleVar(value=10.0)
 
+        self.presets = {
+            "Select a preset": (None, None),
+            "0": ("#950000", "#964301"),
+            "1": ("#8FD16A", "#2DA14E"),
+            "2": ("#AE5FAD", "#C892C7"),
+            "3": ("#326C36", "#273470"),
+        }
+
         self.top_frame = tk.Frame(root)
         self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
-        self.preview_frame = tk.Frame(root, bg="#808080")
-        self.preview_frame.pack(expand=True, fill=tk.BOTH)
+        self.preset_selector = ttk.Combobox(self.top_frame, values=list(self.presets.keys()), state="readonly")
+        self.preset_selector.current(0)
+        self.preset_selector.pack(side=tk.LEFT, padx=5)
+        self.preset_selector.bind("<<ComboboxSelected>>", self.apply_preset)
 
         self.base_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
         self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
@@ -88,11 +119,29 @@ class ColourShiftApp:
         self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
 
-        tk.Label(self.top_frame, text="Min ΔE").pack(side=tk.LEFT, padx=5)
-        tk.Spinbox(self.top_frame, from_=0.0, to=100.0, increment=1.0, textvariable=self.min_delta, width=5).pack(side=tk.LEFT)
-
         self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
+
+        self.slider_frame = tk.Frame(root)
+        self.slider_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+
+        tk.Label(self.slider_frame, text="Min ΔE").pack(side=tk.LEFT, padx=5)
+        tk.Scale(self.slider_frame, from_=0.0, to=100.0, orient=tk.HORIZONTAL, resolution=1.0, variable=self.min_delta, length=200).pack(side=tk.LEFT)
+
+        self.preview_frame = tk.Frame(root, bg="#808080")
+        self.preview_frame.pack(expand=True, fill=tk.BOTH)
+
+    def apply_preset(self, event):
+        preset = self.preset_selector.get()
+        base_hex, surround_hex = self.presets[preset]
+        if base_hex:
+            self.base_color = base_hex
+            self.base_display.delete("all")
+            self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
+        if surround_hex:
+            self.original_surround = surround_hex
+            self.surround_display.delete("all")
+            self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
 
     def pick_base_color(self):
         color = colorchooser.askcolor(title="Pick Base Color")
