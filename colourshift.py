@@ -77,7 +77,6 @@ class ColourShiftApp:
         self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
 
-        
         self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
 
@@ -103,21 +102,33 @@ class ColourShiftApp:
     def handle_patch_click(self, hex_color, event=None):
         comparison_window = tk.Toplevel(self.root)
         comparison_window.title("Perceptual Shift Comparison")
-        comparison_window.geometry("600x300")
 
-        base_rgb = hex_to_rgb(self.base_color)
-        left_surround = self.original_surround
-        right_surround = hex_color
-
-        left_canvas = tk.Canvas(comparison_window, width=300, height=300)
+        left_canvas = tk.Canvas(comparison_window)
         left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        left_canvas.create_rectangle(0, 0, 300, 300, fill=left_surround, outline="")
-        left_canvas.create_rectangle(125, 125, 175, 175, fill=self.base_color, outline="black")
 
-        right_canvas = tk.Canvas(comparison_window, width=300, height=300)
+        right_canvas = tk.Canvas(comparison_window)
         right_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        right_canvas.create_rectangle(0, 0, 300, 300, fill=right_surround, outline="")
-        right_canvas.create_rectangle(125, 125, 175, 175, fill=self.base_color, outline="black")
+
+        def draw_comparison():
+            comparison_window.update_idletasks()
+            w = comparison_window.winfo_width()
+            h = comparison_window.winfo_height()
+            half_w = w // 2
+
+            for canvas in (left_canvas, right_canvas):
+                canvas.delete("all")
+
+            left_canvas.create_rectangle(0, 0, half_w, h, fill=self.original_surround, outline="")
+            left_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, outline="black")
+
+            right_canvas.create_rectangle(0, 0, half_w, h, fill=hex_color, outline="")
+            right_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, outline="black")
+
+        def schedule_draw(_event=None):
+            comparison_window.after_idle(draw_comparison)
+
+        comparison_window.bind("<Configure>", schedule_draw)
+        draw_comparison()
 
     def solve(self):
         base_rgb = hex_to_rgb(self.base_color)
