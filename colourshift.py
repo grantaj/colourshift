@@ -112,12 +112,12 @@ class ColourShiftApp:
 
             for canvas in (left_canvas, right_canvas):
                 canvas.delete("all")
-
+            w = 50
             left_canvas.create_rectangle(0, 0, half_w, h, fill=self.original_surround, width=0)
-            left_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, width=0)
+            left_canvas.create_rectangle(half_w//2 - w, h//2 - w, half_w//2 + w, h//2 + w, fill=self.base_color, width=0)
 
             right_canvas.create_rectangle(0, 0, half_w, h, fill=hex_color, width=0)
-            right_canvas.create_rectangle(half_w//2 - 25, h//2 - 25, half_w//2 + 25, h//2 + 25, fill=self.base_color, width=0)
+            right_canvas.create_rectangle(half_w//2 - w, h//2 - w, half_w//2 + w, h//2 + w, fill=self.base_color, width=0)
 
         def schedule_draw(_event=None):
             comparison_window.after_idle(draw_comparison)
