@@ -97,10 +97,27 @@ class ColourShiftApp:
 
     def set_surround(self, hex_color):
         self.original_surround = hex_color
-        self.surround_display.config(text=f"Surround: {self.original_surround}", bg=self.original_surround)
+        self.surround_display.delete("all")
+        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, outline='')
 
     def handle_patch_click(self, hex_color, event=None):
-        self.set_surround(hex_color)
+        comparison_window = tk.Toplevel(self.root)
+        comparison_window.title("Perceptual Shift Comparison")
+        comparison_window.geometry("600x300")
+
+        base_rgb = hex_to_rgb(self.base_color)
+        left_surround = self.original_surround
+        right_surround = hex_color
+
+        left_canvas = tk.Canvas(comparison_window, width=300, height=300)
+        left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        left_canvas.create_rectangle(0, 0, 300, 300, fill=left_surround, outline="")
+        left_canvas.create_rectangle(125, 125, 175, 175, fill=self.base_color, outline="black")
+
+        right_canvas = tk.Canvas(comparison_window, width=300, height=300)
+        right_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        right_canvas.create_rectangle(0, 0, 300, 300, fill=right_surround, outline="")
+        right_canvas.create_rectangle(125, 125, 175, 175, fill=self.base_color, outline="black")
 
     def solve(self):
         base_rgb = hex_to_rgb(self.base_color)
