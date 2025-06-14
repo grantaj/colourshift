@@ -5,6 +5,7 @@ import colour
 from colour.appearance import XYZ_to_CIECAM02
 from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS
 from colour.difference import delta_E_CAM02UCS
+import warnings
 
 
 def hex_to_rgb(hex_color):
@@ -30,21 +31,27 @@ def compute_appearance_difference(base_rgb, original_surround_rgb, min_delta=10.
     base_UCS = JMh_CIECAM02_to_CAM02UCS(base_JMh)
 
     results = []
-    for r in np.linspace(0, 1, 12):
-        for g in np.linspace(0, 1, 12):
-            for b in np.linspace(0, 1, 12):
-                candidate_rgb = [r, g, b]
-                try:
-                    surround_XYZ = rgb_to_XYZ(candidate_rgb)
-                    candidate_spec = XYZ_to_CIECAM02(base_XYZ, surround_XYZ, Y_b, L_A, surround=vc)
-                    candidate_JMh = [candidate_spec.J, candidate_spec.M, candidate_spec.h]
-                    candidate_UCS = JMh_CIECAM02_to_CAM02UCS(candidate_JMh)
-                    dE = delta_E_CAM02UCS(base_UCS, candidate_UCS)
-                    if not np.isfinite(dE):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        for r in np.linspace(0, 1, 12):
+            for g in np.linspace(0, 1, 12):
+                for b in np.linspace(0, 1, 12):
+                    candidate_rgb = [r, g, b]
+                    try:
+                        surround_XYZ = rgb_to_XYZ(candidate_rgb)
+                        candidate_spec = XYZ_to_CIECAM02(base_XYZ, surround_XYZ, Y_b, L_A, surround=vc)
+                        candidate_JMh = [candidate_spec.J, candidate_spec.M, candidate_spec.h]
+                        if not all(np.isfinite(candidate_JMh)):
+                            continue
+                        candidate_UCS = JMh_CIECAM02_to_CAM02UCS(candidate_JMh)
+                        if not all(np.isfinite(candidate_UCS)):
+                            continue
+                        dE = delta_E_CAM02UCS(base_UCS, candidate_UCS)
+                        if not np.isfinite(dE):
+                            continue
+                        results.append((candidate_rgb, dE, candidate_UCS))
+                    except Exception:
                         continue
-                    results.append((candidate_rgb, dE, candidate_UCS))
-                except Exception:
-                    continue
 
     results.sort(key=lambda x: -x[1])
     filtered = []
@@ -124,12 +131,12 @@ class ColourShiftApp:
 
             for canvas in (left_canvas, right_canvas):
                 canvas.delete("all")
-            w = 50
+            box_w = 50
             left_canvas.create_rectangle(0, 0, half_w, h, fill=self.original_surround, width=0)
-            left_canvas.create_rectangle(half_w//2 - w, h//2 - w, half_w//2 + w, h//2 + w, fill=self.base_color, width=0)
+            left_canvas.create_rectangle(half_w//2 - box_w, h//2 - box_w, half_w//2 + box_w, h//2 + box_w, fill=self.base_color, width=0)
 
             right_canvas.create_rectangle(0, 0, half_w, h, fill=hex_color, width=0)
-            right_canvas.create_rectangle(half_w//2 - w, h//2 - w, half_w//2 + w, h//2 + w, fill=self.base_color, width=0)
+            right_canvas.create_rectangle(half_w//2 - box_w, h//2 - box_w, half_w//2 + box_w, h//2 + box_w, fill=self.base_color, width=0)
 
         def schedule_draw(_event=None):
             comparison_window.after_idle(draw_comparison)
