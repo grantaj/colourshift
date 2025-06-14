@@ -15,10 +15,33 @@ feature = st.sidebar.selectbox(
 base_color = st.sidebar.color_picker("Base Color", "#ff0000")
 surround_color = st.sidebar.color_picker("Surround Color", "#ffffff")
 
+bg_option = st.sidebar.selectbox("Background", ["Neutral Gray", "White", "Black"])
+bg_color = {"Neutral Gray": "#808080", "White": "#ffffff", "Black": "#000000"}[bg_option]
+text_color = {"Neutral Gray": "#e0e0e0", "White": "#808080", "Black": "#e0e0e0"}[bg_option]  # Lower contrast
+
 if feature == "Maximal Shift":
     st.sidebar.button("Solve")
 
 st.sidebar.button("Reset")
+
+# --- Set background and text color to cover entire viewport and hide Streamlit header ---
+st.markdown(
+    f"""
+    <style>
+    html, body, .block-container, .main, .stApp {{
+        background-color: {bg_color} !important;
+        color: {text_color} !important;
+        height: 100%;
+        min-height: 100vh;
+    }}
+
+    header[data-testid="stHeader"] {{
+        display: none;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- Main UI ---
 st.title("Color Appearance Simulator")
