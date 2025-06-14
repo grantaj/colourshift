@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import colorchooser, ttk, filedialog
+from PIL import Image, ImageDraw
 import numpy as np
 import colour
 from colour.appearance import XYZ_to_CIECAM02
@@ -221,36 +222,70 @@ class ColourShiftApp:
 
             label = tk.Label(patch_frame, text=f"ΔAppearance = {dE:.2f}", bg="white", fg="black")
             label.pack()
+            export_btn = tk.Button(patch_frame, text="Export PNG", command=partial(self.export_comparison_image, hex_col))
+            export_btn.pack(pady=2)
 
     def save_solution_json(self):
-                #if not hasattr(self, 'results') or not self.results:
-                #    return
 
-                base_rgb = hex_to_rgb(self.base_color)
-                surround_rgb = hex_to_rgb(self.original_surround)
+            base_rgb = hex_to_rgb(self.base_color)
+            surround_rgb = hex_to_rgb(self.original_surround)
 
-                data = {
-                    "base_color": {
-                        "hex": self.base_color,
-                        "rgb": base_rgb
-                    },
-                    "surround_color": {
-                        "hex": self.original_surround,
-                        "rgb": surround_rgb
-                    },
-                    "candidates": [
-                        {
-                            "hex": rgb_to_hex(rgb),
-                            "rgb": rgb,
-                            "deltaE": dE
-                        } for rgb, dE in self.results
-                    ]
-                }
+            data = {
+                "base_color": {
+                    "hex": self.base_color,
+                    "rgb": base_rgb
+                },
+                "surround_color": {
+                    "hex": self.original_surround,
+                    "rgb": surround_rgb
+                },
+                "candidates": [
+                    {
+                        "hex": rgb_to_hex(rgb),
+                        "rgb": rgb,
+                        "deltaE": dE
+                    } for rgb, dE in self.results
+                ]
+            }
 
-                file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
-                if file_path:
-                    with open(file_path, 'w') as f:
-                        json.dump(data, f, indent=4)
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json")],
+                title="Save Solution As"
+            )
+            if filepath:
+                with open(filepath, "w") as f:
+                    json.dump(data, f, indent=4)
+
+    def export_comparison_image(self, hex_color):
+        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
+        if not file_path:
+            return
+
+        size = (300, 150)
+        box_size = 20
+
+        img = Image.new("RGB", (size[0], size[1]), "white")
+        draw = ImageDraw.Draw(img)
+
+        # Left half with original surround
+        draw.rectangle([0, 0, size[0] // 2, size[1]], fill=self.original_surround)
+        left_center = (size[0] // 4, size[1] // 2)
+        draw.rectangle([
+            left_center[0] - box_size, left_center[1] - box_size,
+            left_center[0] + box_size, left_center[1] + box_size
+        ], fill=self.base_color)
+
+        # Right half with candidate
+        draw.rectangle([size[0] // 2, 0, size[0], size[1]], fill=hex_color)
+        right_center = (3 * size[0] // 4, size[1] // 2)
+        draw.rectangle([
+            right_center[0] - box_size, right_center[1] - box_size,
+            right_center[0] + box_size, right_center[1] + box_size
+        ], fill=self.base_color)
+
+        img.save(file_path)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
