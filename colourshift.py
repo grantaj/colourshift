@@ -1,11 +1,12 @@
 import tkinter as tk
-from tkinter import colorchooser, ttk
+from tkinter import colorchooser, ttk, filedialog
 import numpy as np
 import colour
 from colour.appearance import XYZ_to_CIECAM02
 from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS
 from colour.difference import delta_E_CAM02UCS
 import warnings
+import json
 
 DEBUG = False
 
@@ -92,6 +93,7 @@ class ColourShiftApp:
         self.original_surround = "#964301"
 
         self.min_delta = tk.DoubleVar(value=10.0)
+        self.results = []
 
         self.presets = {
             "Select a preset": (None, None),
@@ -121,6 +123,9 @@ class ColourShiftApp:
 
         self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
+
+        self.save_btn = tk.Button(self.top_frame, text="Save JSON", command=self.save_solution_json)
+        self.save_btn.pack(side=tk.LEFT, padx=10)
 
         self.slider_frame = tk.Frame(root)
         self.slider_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
@@ -197,12 +202,12 @@ class ColourShiftApp:
         base_rgb = hex_to_rgb(self.base_color)
         surround_rgb = hex_to_rgb(self.original_surround)
         min_delta = self.min_delta.get()
-        results = compute_appearance_difference(base_rgb, surround_rgb, min_delta=min_delta)
+        self.results = compute_appearance_difference(base_rgb, surround_rgb, min_delta=min_delta)
 
         for widget in self.preview_frame.winfo_children():
             widget.destroy()
 
-        for i, (rgb, dE) in enumerate(results):
+        for i, (rgb, dE) in enumerate(self.results):
             hex_col = rgb_to_hex(rgb)
 
             patch_frame = tk.Frame(self.preview_frame)
@@ -216,6 +221,36 @@ class ColourShiftApp:
 
             label = tk.Label(patch_frame, text=f"ΔAppearance = {dE:.2f}", bg="white", fg="black")
             label.pack()
+
+    def save_solution_json(self):
+                #if not hasattr(self, 'results') or not self.results:
+                #    return
+
+                base_rgb = hex_to_rgb(self.base_color)
+                surround_rgb = hex_to_rgb(self.original_surround)
+
+                data = {
+                    "base_color": {
+                        "hex": self.base_color,
+                        "rgb": base_rgb
+                    },
+                    "surround_color": {
+                        "hex": self.original_surround,
+                        "rgb": surround_rgb
+                    },
+                    "candidates": [
+                        {
+                            "hex": rgb_to_hex(rgb),
+                            "rgb": rgb,
+                            "deltaE": dE
+                        } for rgb, dE in self.results
+                    ]
+                }
+
+                file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json")])
+                if file_path:
+                    with open(file_path, 'w') as f:
+                        json.dump(data, f, indent=4)
 
 if __name__ == "__main__":
     root = tk.Tk()
