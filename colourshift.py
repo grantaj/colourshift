@@ -17,7 +17,7 @@ def rgb_to_hex(rgb):
 def rgb_to_XYZ(rgb):
     return colour.sRGB_to_XYZ(rgb)
 
-def compute_appearance_difference(base_rgb, original_surround_rgb):
+def compute_appearance_difference(base_rgb, original_surround_rgb, min_delta=10.0, max_candidates=3):
     base_XYZ = rgb_to_XYZ(base_rgb)
     original_surround_XYZ = rgb_to_XYZ(original_surround_rgb)
 
@@ -42,12 +42,19 @@ def compute_appearance_difference(base_rgb, original_surround_rgb):
                     dE = delta_E_CAM02UCS(base_UCS, candidate_UCS)
                     if not np.isfinite(dE):
                         continue
-                    results.append((candidate_rgb, dE))
+                    results.append((candidate_rgb, dE, candidate_UCS))
                 except Exception:
                     continue
 
     results.sort(key=lambda x: -x[1])
-    return results[:3]
+    filtered = []
+    for rgb, dE, ucs in results:
+        if all(delta_E_CAM02UCS(ucs, prev_ucs) >= min_delta for _, prev_ucs in filtered):
+            filtered.append((rgb, ucs))
+        if len(filtered) == max_candidates:
+            break
+
+    return [(rgb, delta_E_CAM02UCS(base_UCS, ucs)) for rgb, ucs in filtered]
 
 class ColourShiftApp:
     def __init__(self, root):
@@ -55,6 +62,8 @@ class ColourShiftApp:
         self.root.title("ColourShift")
         self.base_color = "#950000"
         self.original_surround = "#964301"
+
+        self.min_delta = tk.DoubleVar(value=10.0)
 
         self.top_frame = tk.Frame(root)
         self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -71,6 +80,9 @@ class ColourShiftApp:
         self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
         self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
+
+        tk.Label(self.top_frame, text="Min ΔE").pack(side=tk.LEFT, padx=5)
+        tk.Spinbox(self.top_frame, from_=0.0, to=100.0, increment=1.0, textvariable=self.min_delta, width=5).pack(side=tk.LEFT)
 
         self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
@@ -128,7 +140,8 @@ class ColourShiftApp:
     def solve(self):
         base_rgb = hex_to_rgb(self.base_color)
         surround_rgb = hex_to_rgb(self.original_surround)
-        results = compute_appearance_difference(base_rgb, surround_rgb)
+        min_delta = self.min_delta.get()
+        results = compute_appearance_difference(base_rgb, surround_rgb, min_delta=min_delta)
 
         for widget in self.preview_frame.winfo_children():
             widget.destroy()
