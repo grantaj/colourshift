@@ -176,6 +176,7 @@ class ColourShiftApp:
 
         self.min_delta = tk.DoubleVar(value=10.0)
         self.results = []
+        self.current_mode = "compare"  # Can be 'compare', 'set_base', 'set_surround'
 
         self.presets = {
             "Select a preset": (None, None),
@@ -236,6 +237,19 @@ class ColourShiftApp:
 
         self.preview_frame = tk.Frame(root, bg="#808080")
         self.preview_frame.pack(expand=True, fill=tk.BOTH)
+
+        self.preview_label = tk.Label(self.preview_frame, text="", bg="#808080")
+        self.preview_label.pack(side=tk.TOP, pady=5)
+
+    def update_preview_label(self):
+        if hasattr(self, "preview_label") and self.preview_label.winfo_exists():
+            if self.current_mode == "compare":
+                self.preview_label.config(text="Click a patch to compare it with the original base/surround pair.")
+            elif self.current_mode == "set_base":
+                self.preview_label.config(text="Click a patch to set base colour.")
+            elif self.current_mode == "set_surround":
+                self.preview_label.config(text="Click a patch to set surround colour.")
+
 
     def apply_preset(self, event):
         preset = self.preset_selector.get()
@@ -308,6 +322,11 @@ class ColourShiftApp:
         for widget in self.preview_frame.winfo_children():
             widget.destroy()
 
+        self.current_mode = "compare"
+        self.preview_label = tk.Label(self.preview_frame, bg="#808080")
+        self.preview_label.pack(side=tk.TOP, pady=5)
+        self.update_preview_label()
+
         for i, (rgb, dE) in enumerate(self.results):
             hex_col = rgb_to_hex(rgb)
 
@@ -324,6 +343,8 @@ class ColourShiftApp:
             label.pack()
             export_btn = tk.Button(patch_frame, text="Export PNG", command=partial(self.export_comparison_image, hex_col))
             export_btn.pack(pady=2)
+
+
 
     def save_solution_json(self):
 
@@ -391,14 +412,25 @@ class ColourShiftApp:
         candidates = find_extreme_shift_colors(base_rgb, fixed_as_base=True)
         self.show_candidates(candidates, set_surround=True)
 
+
     def find_shifted_bases(self):
         surround_rgb = hex_to_rgb(self.original_surround)
         candidates = find_extreme_shift_colors(surround_rgb, fixed_as_base=False)
         self.show_candidates(candidates, set_surround=False)
 
+
     def show_candidates(self, candidates, set_surround=True):
         for widget in self.preview_frame.winfo_children():
             widget.destroy()
+
+        if set_surround is True:
+            self.current_mode = "set_surround"
+        else:
+            self.current_mode = "set_base"
+
+        self.preview_label = tk.Label(self.preview_frame, bg="#808080")
+        self.preview_label.pack(side=tk.TOP, pady=5)
+        self.update_preview_label()
 
         for rgb, dE in candidates:
             hex_col = rgb_to_hex(rgb)
