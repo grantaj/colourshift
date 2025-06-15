@@ -185,37 +185,47 @@ class ColourShiftApp:
             "3": ("#326C36", "#273470"),
         }
 
-        self.top_frame = tk.Frame(root)
-        self.top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+        # Layout containers
+        self.top_container = tk.Frame(root)
+        self.top_container.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
-        self.preset_selector = ttk.Combobox(self.top_frame, values=list(self.presets.keys()), state="readonly")
+        self.row_top = tk.Frame(self.top_container)
+        self.row_top.pack(fill=tk.X)
+
+        self.preset_selector = ttk.Combobox(self.row_top, values=list(self.presets.keys()), state="readonly")
         self.preset_selector.current(0)
         self.preset_selector.pack(side=tk.LEFT, padx=5)
         self.preset_selector.bind("<<ComboboxSelected>>", self.apply_preset)
 
-        self.base_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
+        self.base_display = tk.Canvas(self.row_top, width=60, height=60, highlightthickness=1, highlightbackground='black')
         self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
         self.base_display.bind("<Button-1>", lambda e: self.pick_base_color())
         self.base_display.pack(side=tk.LEFT, padx=5)
 
-        self.surround_display = tk.Canvas(self.top_frame, width=60, height=60, highlightthickness=1, highlightbackground='black')
+        self.surround_display = tk.Canvas(self.row_top, width=60, height=60, highlightthickness=1, highlightbackground='black')
         self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
         self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
 
-        self.solve_btn = tk.Button(self.top_frame, text="Maximal Shift", command=self.solve)
+        self.row_actions = tk.Frame(self.top_container)
+        self.row_actions.pack(fill=tk.X, pady=5)
+
+        self.solve_btn = tk.Button(self.row_actions, text="Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
         ToolTip(self.solve_btn, "Find alternate surround colours that maximally shift the base colour compared to orignal base/surround pair")
 
-        self.base_extreme_btn = tk.Button(self.top_frame, text="Sensitive Bases", command=self.find_shifted_bases)
+        self.base_extreme_btn = tk.Button(self.row_actions, text="Sensitive Bases", command=self.find_shifted_bases)
         self.base_extreme_btn.pack(side=tk.LEFT, padx=5)
         ToolTip(self.base_extreme_btn, "Find three base colours that are maximally shifted in  current surround")
 
-        self.surround_extreme_btn = tk.Button(self.top_frame, text="Strongest Surrounds", command=self.find_shifted_surrounds)
+        self.surround_extreme_btn = tk.Button(self.row_actions, text="Strongest Surrounds", command=self.find_shifted_surrounds)
         self.surround_extreme_btn.pack(side=tk.LEFT, padx=5)
         ToolTip(self.surround_extreme_btn, "Find three surround colours that maximally influence the appearance of the current base")
 
-        self.save_btn = tk.Button(self.top_frame, text="Save JSON", command=self.save_solution_json)
+        self.row_save = tk.Frame(self.top_container)
+        self.row_save.pack(fill=tk.X, pady=5)
+
+        self.save_btn = tk.Button(self.row_save, text="Save JSON", command=self.save_solution_json)
         self.save_btn.pack(side=tk.LEFT, padx=10)
 
         self.slider_frame = tk.Frame(root)
