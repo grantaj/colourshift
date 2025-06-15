@@ -86,6 +86,58 @@ def compute_appearance_difference(base_rgb, original_surround_rgb, min_delta=10.
 
     return [(rgb, delta_E_CAM02UCS(base_UCS, ucs)) for rgb, _, ucs in filtered]
 
+def find_extreme_shift_colors(fixed_rgb, fixed_as_base, min_delta=10.0, max_candidates=3):
+    fixed_XYZ = rgb_to_XYZ(fixed_rgb)
+    vc = colour.VIEWING_CONDITIONS_CIECAM02['Average']
+    Y_b = 20
+    L_A = 64
+
+    candidates = []
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        for r in np.linspace(0, 1, 12):
+            for g in np.linspace(0, 1, 12):
+                for b in np.linspace(0, 1, 12):
+                    test_rgb = [r, g, b]
+                    try:
+                        test_XYZ = rgb_to_XYZ(test_rgb)
+                        if fixed_as_base:
+                            base_spec = XYZ_to_CIECAM02(fixed_XYZ, test_XYZ, Y_b, L_A, surround=vc)
+                            test_spec = XYZ_to_CIECAM02(fixed_XYZ, fixed_XYZ, Y_b, L_A, surround=vc)
+                        else:
+                            base_spec = XYZ_to_CIECAM02(test_XYZ, fixed_XYZ, Y_b, L_A, surround=vc)
+                            test_spec = XYZ_to_CIECAM02(fixed_XYZ, fixed_XYZ, Y_b, L_A, surround=vc)
+
+                        base_JMh = [base_spec.J, base_spec.M, base_spec.h]
+                        test_JMh = [test_spec.J, test_spec.M, test_spec.h]
+                        if not (is_valid_JMh(*base_JMh) and is_valid_JMh(*test_JMh)):
+                            continue
+                        base_UCS = JMh_CIECAM02_to_CAM02UCS(base_JMh)
+                        test_UCS = JMh_CIECAM02_to_CAM02UCS(test_JMh)
+                        if not all(np.isfinite(test_UCS)):
+                            continue
+                        shift_dE = delta_E_CAM02UCS(base_UCS, test_UCS)
+                        if not np.isfinite(shift_dE):
+                            continue
+                        candidates.append((test_rgb, shift_dE))
+                    except Exception:
+                        continue
+    candidates.sort(key=lambda x: -x[1])
+    filtered = []
+    for rgb, dE in candidates:
+        deltas = []
+        for r, _ in filtered:
+            spec1 = XYZ_to_CIECAM02(rgb_to_XYZ(rgb), fixed_XYZ, Y_b, L_A, surround=vc)
+            spec2 = XYZ_to_CIECAM02(rgb_to_XYZ(r), fixed_XYZ, Y_b, L_A, surround=vc)
+            ucs1 = JMh_CIECAM02_to_CAM02UCS([spec1.J, spec1.M, spec1.h])
+            ucs2 = JMh_CIECAM02_to_CAM02UCS([spec2.J, spec2.M, spec2.h])
+            deltas.append(delta_E_CAM02UCS(ucs1, ucs2))
+        if all(d >= min_delta for d in deltas):
+            filtered.append((rgb, dE))
+        if len(filtered) >= max_candidates:
+            break
+    return filtered
+
 class ColourShiftApp:
     def __init__(self, root):
         self.root = root
@@ -124,6 +176,12 @@ class ColourShiftApp:
 
         self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
+
+        self.base_extreme_btn = tk.Button(self.top_frame, text="Find Shifted Bases", command=self.find_shifted_bases)
+        self.base_extreme_btn.pack(side=tk.LEFT, padx=5)
+
+        self.surround_extreme_btn = tk.Button(self.top_frame, text="Find Shifted Surrounds", command=self.find_shifted_surrounds)
+        self.surround_extreme_btn.pack(side=tk.LEFT, padx=5)
 
         self.save_btn = tk.Button(self.top_frame, text="Save JSON", command=self.save_solution_json)
         self.save_btn.pack(side=tk.LEFT, padx=10)
@@ -286,6 +344,46 @@ class ColourShiftApp:
 
         img.save(file_path)
 
+    def find_shifted_surrounds(self):
+        base_rgb = hex_to_rgb(self.base_color)
+        candidates = find_extreme_shift_colors(base_rgb, fixed_as_base=True)
+        self.show_candidates(candidates, set_surround=True)
+
+    def find_shifted_bases(self):
+        surround_rgb = hex_to_rgb(self.original_surround)
+        candidates = find_extreme_shift_colors(surround_rgb, fixed_as_base=False)
+        self.show_candidates(candidates, set_surround=False)
+
+    def show_candidates(self, candidates, set_surround=True):
+        for widget in self.preview_frame.winfo_children():
+            widget.destroy()
+
+        for rgb, dE in candidates:
+            hex_col = rgb_to_hex(rgb)
+            patch_frame = tk.Frame(self.preview_frame)
+            patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
+
+            canvas = tk.Canvas(patch_frame, width=100, height=100, highlightthickness=1, highlightbackground="black")
+            canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, width=0)
+
+            if set_surround:
+                canvas.bind("<Button-1>", lambda e, c=hex_col: self.set_surround(c))
+            else:
+                canvas.bind("<Button-1>", lambda e, c=hex_col: self.set_base(c))
+            canvas.pack()
+
+            label = tk.Label(patch_frame, text=f"ΔE = {dE:.2f}", bg="white", fg="black")
+            label.pack()
+
+    def set_base(self, hex_color):
+        self.base_color = hex_color
+        self.base_display.delete("all")
+        self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
+
+    def set_surround(self, hex_color):
+        self.original_surround = hex_color
+        self.surround_display.delete("all")
+        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
 
 if __name__ == "__main__":
     root = tk.Tk()
