@@ -138,6 +138,35 @@ def find_extreme_shift_colors(fixed_rgb, fixed_as_base, min_delta=10.0, max_cand
             break
     return filtered
 
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tip_window = None
+        widget.bind("<Enter>", self.show_tip)
+        widget.bind("<Leave>", self.hide_tip)
+
+    def show_tip(self, event=None):
+        if self.tip_window or not self.text:
+            return
+        x, y, _, cy = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + cy + 25
+        self.tip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.geometry(f"+{x}+{y}")
+        label = tk.Label(tw, text=self.text, justify=tk.LEFT,
+                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                         font=("tahoma", "9", "normal"))
+        label.pack(ipadx=1)
+
+    def hide_tip(self, event=None):
+        tw = self.tip_window
+        self.tip_window = None
+        if tw:
+            tw.destroy()
+
+
 class ColourShiftApp:
     def __init__(self, root):
         self.root = root
@@ -174,14 +203,17 @@ class ColourShiftApp:
         self.surround_display.bind("<Button-1>", lambda e: self.pick_surround_color())
         self.surround_display.pack(side=tk.LEFT, padx=5)
 
-        self.solve_btn = tk.Button(self.top_frame, text="Solve Maximal Shift", command=self.solve)
+        self.solve_btn = tk.Button(self.top_frame, text="Maximal Shift", command=self.solve)
         self.solve_btn.pack(side=tk.LEFT, padx=10)
+        ToolTip(self.solve_btn, "Find alternate surround colours that maximally shift the base colour compared to orignal base/surround pair")
 
-        self.base_extreme_btn = tk.Button(self.top_frame, text="Find Shifted Bases", command=self.find_shifted_bases)
+        self.base_extreme_btn = tk.Button(self.top_frame, text="Sensitive Bases", command=self.find_shifted_bases)
         self.base_extreme_btn.pack(side=tk.LEFT, padx=5)
+        ToolTip(self.base_extreme_btn, "Find three base colours that are maximally shifted in  current surround")
 
-        self.surround_extreme_btn = tk.Button(self.top_frame, text="Find Shifted Surrounds", command=self.find_shifted_surrounds)
+        self.surround_extreme_btn = tk.Button(self.top_frame, text="Strongest Surrounds", command=self.find_shifted_surrounds)
         self.surround_extreme_btn.pack(side=tk.LEFT, padx=5)
+        ToolTip(self.surround_extreme_btn, "Find three surround colours that maximally influence the appearance of the current base")
 
         self.save_btn = tk.Button(self.top_frame, text="Save JSON", command=self.save_solution_json)
         self.save_btn.pack(side=tk.LEFT, padx=10)
