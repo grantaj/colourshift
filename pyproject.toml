@@ -1,0 +1,15 @@
+[project]
+name = "colourshift"
+version = "0.1.0"
+description = "Color appearance exploration (CAM02/CAM02-UCS) with Tk UI"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "Pillow",
+    "colour-science",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
