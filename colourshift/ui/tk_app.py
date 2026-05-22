@@ -284,10 +284,10 @@ class ColourShiftApp:
         self.results = results
         self.reset_preview("compare")
 
-        for rgb, dE in self.results:
+        for result in self.results:
             self.create_result_patch(
-                rgb,
-                dE,
+                result.rgb,
+                result.delta_e,
                 click_handler_factory=lambda hex_col: partial(self.handle_patch_click, hex_col),
                 include_export=True,
             )
@@ -335,8 +335,12 @@ class ColourShiftApp:
                 return lambda _event: self.set_surround(hex_col)
             return lambda _event: self.set_base(hex_col)
 
-        for rgb, dE in candidates:
-            self.create_result_patch(rgb, dE, click_handler_factory=click_handler_factory)
+        for result in candidates:
+            self.create_result_patch(
+                result.rgb,
+                result.delta_e,
+                click_handler_factory=click_handler_factory,
+            )
 
 
 def main():

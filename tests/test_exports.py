@@ -1,5 +1,6 @@
 import json
 
+from colourshift.core.algorithms import ColourShiftResult
 from colourshift.io import build_solution_payload, create_comparison_image, save_solution_json
 
 
@@ -7,7 +8,7 @@ def test_build_solution_payload_serialises_candidates():
     payload = build_solution_payload(
         "#950000",
         "#964301",
-        [([1.0, 0.0, 0.5], 12.34)],
+        [ColourShiftResult(rgb=[1.0, 0.0, 0.5], delta_e=12.34)],
     )
 
     assert payload == {
@@ -32,7 +33,12 @@ def test_build_solution_payload_serialises_candidates():
 def test_save_solution_json_writes_payload(tmp_path):
     path = tmp_path / "solution.json"
 
-    save_solution_json(path, "#000000", "#ffffff", [([0.0, 1.0, 0.0], 3)])
+    save_solution_json(
+        path,
+        "#000000",
+        "#ffffff",
+        [ColourShiftResult(rgb=[0.0, 1.0, 0.0], delta_e=3)],
+    )
 
     assert json.loads(path.read_text(encoding="utf-8"))["candidates"] == [
         {

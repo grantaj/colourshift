@@ -1,5 +1,6 @@
 import logging
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -15,6 +16,12 @@ from colour.difference import delta_E_CAM02UCS  # noqa: E402
 from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS  # noqa: E402
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ColourShiftResult:
+    rgb: list[float]
+    delta_e: float
 
 
 def _settings(config):
@@ -94,7 +101,7 @@ def compute_appearance_difference(
 
     candidates.sort(key=lambda x: -x[1])
     filtered = _filter_separated_candidates(candidates, min_delta, max_candidates)
-    return [(rgb, shift_delta) for rgb, shift_delta, _ in filtered]
+    return [ColourShiftResult(rgb=rgb, delta_e=shift_delta) for rgb, shift_delta, _ in filtered]
 
 
 def find_extreme_shift_colors(
@@ -131,4 +138,4 @@ def find_extreme_shift_colors(
 
     candidates.sort(key=lambda x: -x[1])
     filtered = _filter_separated_candidates(candidates, min_delta, max_candidates)
-    return [(rgb, shift_delta) for rgb, shift_delta, _ in filtered]
+    return [ColourShiftResult(rgb=rgb, delta_e=shift_delta) for rgb, shift_delta, _ in filtered]

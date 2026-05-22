@@ -18,11 +18,11 @@ def build_solution_payload(base_hex, surround_hex, candidates):
         },
         "candidates": [
             {
-                "hex": rgb_to_hex(rgb),
-                "rgb": list(rgb),
-                "deltaE": float(delta),
+                "hex": rgb_to_hex(candidate.rgb),
+                "rgb": list(candidate.rgb),
+                "deltaE": float(candidate.delta_e),
             }
-            for rgb, delta in candidates
+            for candidate in candidates
         ],
     }
 

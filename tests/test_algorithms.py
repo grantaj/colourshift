@@ -25,10 +25,11 @@ def test_compute_appearance_difference_returns_finite_candidates():
     )
 
     assert 1 <= len(results) <= 2
-    for rgb, delta in results:
-        assert len(rgb) == 3
-        assert all(0.0 <= channel <= 1.0 for channel in rgb)
-        assert math.isfinite(delta)
+    for result in results:
+        assert isinstance(result, algorithms.ColourShiftResult)
+        assert len(result.rgb) == 3
+        assert all(0.0 <= channel <= 1.0 for channel in result.rgb)
+        assert math.isfinite(result.delta_e)
 
 
 @pytest.mark.parametrize("fixed_as_base", [True, False])
@@ -42,10 +43,11 @@ def test_find_extreme_shift_colors_returns_finite_candidates(fixed_as_base):
     )
 
     assert 1 <= len(results) <= 2
-    for rgb, delta in results:
-        assert len(rgb) == 3
-        assert all(0.0 <= channel <= 1.0 for channel in rgb)
-        assert math.isfinite(delta)
+    for result in results:
+        assert isinstance(result, algorithms.ColourShiftResult)
+        assert len(result.rgb) == 3
+        assert all(0.0 <= channel <= 1.0 for channel in result.rgb)
+        assert math.isfinite(result.delta_e)
 
 
 def test_sensitive_base_reference_uses_candidate_base(monkeypatch):
