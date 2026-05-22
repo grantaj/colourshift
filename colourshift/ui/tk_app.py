@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import colorchooser, ttk, filedialog
 from functools import partial
+from threading import Thread
 
 from colourshift.core.algorithms import compute_appearance_difference, find_extreme_shift_colors
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
@@ -17,6 +18,7 @@ class ColourShiftApp:
         self.min_delta = tk.DoubleVar(value=10.0)
         self.results = []
         self.current_mode = "compare"  # Can be 'compare', 'set_base', 'set_surround'
+        self.is_searching = False
 
         self.presets = {
             "Select a preset": (None, None),
@@ -69,6 +71,9 @@ class ColourShiftApp:
         self.save_btn = tk.Button(self.row_save, text="Save JSON", command=self.save_solution_json)
         self.save_btn.pack(side=tk.LEFT, padx=10)
 
+        self.status_label = tk.Label(self.row_save, text="", anchor="w")
+        self.status_label.pack(side=tk.LEFT, padx=10)
+
         self.slider_frame = tk.Frame(root)
         self.slider_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
@@ -90,6 +95,36 @@ class ColourShiftApp:
             elif self.current_mode == "set_surround":
                 self.preview_label.config(text="Click a patch to set surround colour.")
 
+
+    def set_searching(self, is_searching, message=""):
+        self.is_searching = is_searching
+        state = tk.DISABLED if is_searching else tk.NORMAL
+        for button in (self.solve_btn, self.base_extreme_btn, self.surround_extreme_btn):
+            button.config(state=state)
+        self.status_label.config(text=message)
+
+    def run_search(self, label, search_fn, render_fn):
+        if self.is_searching:
+            return
+
+        self.set_searching(True, label)
+
+        def worker():
+            try:
+                result = search_fn()
+            except Exception as exc:
+                self.root.after(0, lambda exc=exc: self.finish_search_error(exc))
+            else:
+                self.root.after(0, lambda: self.finish_search_success(result, render_fn))
+
+        Thread(target=worker, daemon=True).start()
+
+    def finish_search_success(self, result, render_fn):
+        self.set_searching(False)
+        render_fn(result)
+
+    def finish_search_error(self, exc):
+        self.set_searching(False, f"Search failed: {exc}")
 
     def apply_preset(self, event):
         preset = self.preset_selector.get()
@@ -152,8 +187,15 @@ class ColourShiftApp:
         base_rgb = hex_to_rgb(self.base_color)
         surround_rgb = hex_to_rgb(self.original_surround)
         min_delta = self.min_delta.get()
-        self.results = compute_appearance_difference(base_rgb, surround_rgb, min_delta=min_delta)
 
+        self.run_search(
+            "Searching for maximal shifts...",
+            lambda: compute_appearance_difference(base_rgb, surround_rgb, min_delta=min_delta),
+            self.show_appearance_results,
+        )
+
+    def show_appearance_results(self, results):
+        self.results = results
         for widget in self.preview_frame.winfo_children():
             widget.destroy()
 
@@ -162,7 +204,7 @@ class ColourShiftApp:
         self.preview_label.pack(side=tk.TOP, pady=5)
         self.update_preview_label()
 
-        for i, (rgb, dE) in enumerate(self.results):
+        for rgb, dE in self.results:
             hex_col = rgb_to_hex(rgb)
 
             patch_frame = tk.Frame(self.preview_frame)
@@ -198,14 +240,20 @@ class ColourShiftApp:
 
     def find_shifted_surrounds(self):
         base_rgb = hex_to_rgb(self.base_color)
-        candidates = find_extreme_shift_colors(base_rgb, fixed_as_base=True)
-        self.show_candidates(candidates, set_surround=True)
+        self.run_search(
+            "Searching for strongest surrounds...",
+            lambda: find_extreme_shift_colors(base_rgb, fixed_as_base=True),
+            lambda candidates: self.show_candidates(candidates, set_surround=True),
+        )
 
 
     def find_shifted_bases(self):
         surround_rgb = hex_to_rgb(self.original_surround)
-        candidates = find_extreme_shift_colors(surround_rgb, fixed_as_base=False)
-        self.show_candidates(candidates, set_surround=False)
+        self.run_search(
+            "Searching for sensitive bases...",
+            lambda: find_extreme_shift_colors(surround_rgb, fixed_as_base=False),
+            lambda candidates: self.show_candidates(candidates, set_surround=False),
+        )
 
 
     def show_candidates(self, candidates, set_surround=True):
