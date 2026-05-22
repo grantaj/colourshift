@@ -3,7 +3,7 @@ import math
 import pytest
 
 from colourshift.core import algorithms
-from colourshift.core.config import Config, DEFAULT_CONFIG
+from colourshift.core.config import DEFAULT_CONFIG, Config
 
 
 def test_default_config_preserves_small_search_defaults():

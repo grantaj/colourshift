@@ -32,7 +32,9 @@ def save_solution_json(path, base_hex, surround_hex, candidates):
     Path(path).write_text(json.dumps(payload, indent=4), encoding="utf-8")
 
 
-def create_comparison_image(base_hex, original_surround_hex, candidate_surround_hex, size=(300, 150), box_size=20):
+def create_comparison_image(
+    base_hex, original_surround_hex, candidate_surround_hex, size=(300, 150), box_size=20
+):
     image = Image.new("RGB", size, "white")
     draw = ImageDraw.Draw(image)
 

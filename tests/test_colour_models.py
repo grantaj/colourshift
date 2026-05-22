@@ -22,7 +22,9 @@ def test_rgb_to_hex_formats_lowercase_hex_triplet():
     assert rgb_to_hex([1.0, 0.5, 0.0]) == "#ff7f00"
 
 
-@pytest.mark.parametrize("rgb", [[1.2, 0.0, 0.0], [-0.1, 0.0, 0.0], [float("nan"), 0.0, 0.0], [1.0, 0.0]])
+@pytest.mark.parametrize(
+    "rgb", [[1.2, 0.0, 0.0], [-0.1, 0.0, 0.0], [float("nan"), 0.0, 0.0], [1.0, 0.0]]
+)
 def test_rgb_to_hex_rejects_invalid_values(rgb):
     with pytest.raises(ValueError):
         rgb_to_hex(rgb)

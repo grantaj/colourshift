@@ -37,4 +37,3 @@ class ToolTip:
         self.tip_window = None
         if tw:
             tw.destroy()
-
