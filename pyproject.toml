@@ -1,15 +1,27 @@
 [project]
 name = "colourshift"
 version = "0.1.0"
-description = "Color appearance exploration (CAM02/CAM02-UCS) with Tk UI"
+description = "Colour appearance exploration (CAM02/CAM02-UCS) with Tk UI"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "numpy",
-    "Pillow",
-    "colour-science",
+    "colour-science>=0.4",
+    "numpy>=1.24",
+    "Pillow>=10",
 ]
+
+[project.scripts]
+colourshift = "colourshift.ui.tk_app:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["colourshift*"]
+exclude = ["paper*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]

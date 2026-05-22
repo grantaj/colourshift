@@ -1,10 +1,17 @@
 # ColourShift
 
+## Install
+```bash
+uv sync
+```
+
 ## Run
 ```bash
-python colourshift.py
+uv run colourshift
 ```
-or
+
+The legacy runner still works:
+
 ```bash
-python -m colourshift.ui.tk_app
+uv run python colourshift.py
 ```

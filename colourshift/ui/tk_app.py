@@ -2,14 +2,10 @@ import tkinter as tk
 from tkinter import colorchooser, ttk, filedialog
 from functools import partial
 import json
-import numpy as np
 from PIL import Image, ImageDraw
-import colour
 
-# Bring in core functionality
 from colourshift.core.algorithms import compute_appearance_difference, find_extreme_shift_colors
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
-# (We keep export/save methods in the UI class for now to preserve behavior)
 from .widgets import ToolTip
 
 class ColourShiftApp:
@@ -122,11 +118,6 @@ class ColourShiftApp:
             self.surround_display.delete("all")
             self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
 
-    def set_surround(self, hex_color):
-        self.original_surround = hex_color
-        self.surround_display.delete("all")
-        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
-
     def handle_patch_click(self, hex_color, event=None):
         comparison_window = tk.Toplevel(self.root)
         comparison_window.title("Perceptual Shift Comparison")
@@ -178,7 +169,6 @@ class ColourShiftApp:
             patch_frame = tk.Frame(self.preview_frame)
             patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
 
-            from functools import partial
             canvas = tk.Canvas(patch_frame, width=100, height=100, highlightthickness=1, highlightbackground="black")
             canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, width=0)
             canvas.bind("<Button-1>", partial(self.handle_patch_click, hex_col))
