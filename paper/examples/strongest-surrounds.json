@@ -1,0 +1,58 @@
+{
+    "base_color": {
+        "hex": "#950000",
+        "rgb": [
+            0.5843137254901961,
+            0.0,
+            0.0
+        ]
+    },
+    "surround_color": {
+        "hex": "#964301",
+        "rgb": [
+            0.5882352941176471,
+            0.2627450980392157,
+            0.00392156862745098
+        ]
+    },
+    "candidates": [
+        {
+            "hex": "#000000",
+            "rgb": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "deltaE": 100.15248614428292
+        },
+        {
+            "hex": "#2e73ff",
+            "rgb": [
+                0.18181818181818182,
+                0.4545454545454546,
+                1.0
+            ],
+            "deltaE": 93.05750561408517
+        },
+        {
+            "hex": "#a200ff",
+            "rgb": [
+                0.6363636363636364,
+                0.0,
+                1.0
+            ],
+            "deltaE": 88.09732193543582
+        }
+    ],
+    "search": {
+        "mode": "strongest-surrounds",
+        "config": {
+            "viewing_condition": "Average",
+            "background_luminance": 20.0,
+            "adapting_luminance": 64.0,
+            "rgb_grid_points": 12,
+            "min_delta": 10.0,
+            "max_candidates": 3
+        }
+    }
+}
