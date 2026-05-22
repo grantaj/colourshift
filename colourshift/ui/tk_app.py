@@ -128,6 +128,54 @@ class ColourShiftApp:
             elif self.current_mode == "set_surround":
                 self.preview_label.config(text="Click a patch to set surround colour.")
 
+    def draw_swatch(self, canvas, hex_color, size=60):
+        canvas.delete("all")
+        canvas.create_rectangle(0, 0, size, size, fill=hex_color, width=0)
+
+    def set_base(self, hex_color):
+        self.base_color = hex_color
+        self.draw_swatch(self.base_display, self.base_color)
+
+    def set_surround(self, hex_color):
+        self.original_surround = hex_color
+        self.draw_swatch(self.surround_display, self.original_surround)
+
+    def reset_preview(self, mode):
+        for widget in self.preview_frame.winfo_children():
+            widget.destroy()
+
+        self.current_mode = mode
+        self.preview_label = tk.Label(self.preview_frame, bg="#808080")
+        self.preview_label.pack(side=tk.TOP, pady=5)
+        self.update_preview_label()
+
+    def create_result_patch(self, rgb, delta, click_handler_factory, include_export=False):
+        hex_col = rgb_to_hex(rgb)
+        patch_frame = tk.Frame(self.preview_frame)
+        patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
+
+        canvas = tk.Canvas(
+            patch_frame,
+            width=100,
+            height=100,
+            highlightthickness=1,
+            highlightbackground="black",
+        )
+        self.draw_swatch(canvas, hex_col, size=100)
+        canvas.bind("<Button-1>", click_handler_factory(hex_col))
+        canvas.pack()
+
+        label = tk.Label(patch_frame, text=f"ΔE = {delta:.2f}", bg="white", fg="black")
+        label.pack()
+
+        if include_export:
+            export_btn = tk.Button(
+                patch_frame,
+                text="Export PNG",
+                command=partial(self.export_comparison_image, hex_col),
+            )
+            export_btn.pack(pady=2)
+
     def set_searching(self, is_searching, message=""):
         self.is_searching = is_searching
         state = tk.DISABLED if is_searching else tk.NORMAL
@@ -162,31 +210,19 @@ class ColourShiftApp:
         preset = self.preset_selector.get()
         base_hex, surround_hex = self.presets[preset]
         if base_hex:
-            self.base_color = base_hex
-            self.base_display.delete("all")
-            self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
+            self.set_base(base_hex)
         if surround_hex:
-            self.original_surround = surround_hex
-            self.surround_display.delete("all")
-            self.surround_display.create_rectangle(
-                0, 0, 60, 60, fill=self.original_surround, width=0
-            )
+            self.set_surround(surround_hex)
 
     def pick_base_color(self):
         color = colorchooser.askcolor(title="Pick Base Color")
         if color[1]:
-            self.base_color = color[1]
-            self.base_display.delete("all")
-            self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
+            self.set_base(color[1])
 
     def pick_surround_color(self):
         color = colorchooser.askcolor(title="Pick Surround Color")
         if color[1]:
-            self.original_surround = color[1]
-            self.surround_display.delete("all")
-            self.surround_display.create_rectangle(
-                0, 0, 60, 60, fill=self.original_surround, width=0
-            )
+            self.set_surround(color[1])
 
     def handle_patch_click(self, hex_color, event=None):
         comparison_window = tk.Toplevel(self.root)
@@ -246,39 +282,15 @@ class ColourShiftApp:
 
     def show_appearance_results(self, results):
         self.results = results
-        for widget in self.preview_frame.winfo_children():
-            widget.destroy()
-
-        self.current_mode = "compare"
-        self.preview_label = tk.Label(self.preview_frame, bg="#808080")
-        self.preview_label.pack(side=tk.TOP, pady=5)
-        self.update_preview_label()
+        self.reset_preview("compare")
 
         for rgb, dE in self.results:
-            hex_col = rgb_to_hex(rgb)
-
-            patch_frame = tk.Frame(self.preview_frame)
-            patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
-
-            canvas = tk.Canvas(
-                patch_frame,
-                width=100,
-                height=100,
-                highlightthickness=1,
-                highlightbackground="black",
+            self.create_result_patch(
+                rgb,
+                dE,
+                click_handler_factory=lambda hex_col: partial(self.handle_patch_click, hex_col),
+                include_export=True,
             )
-            canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, width=0)
-            canvas.bind("<Button-1>", partial(self.handle_patch_click, hex_col))
-            canvas.pack()
-
-            label = tk.Label(patch_frame, text=f"ΔAppearance = {dE:.2f}", bg="white", fg="black")
-            label.pack()
-            export_btn = tk.Button(
-                patch_frame,
-                text="Export PNG",
-                command=partial(self.export_comparison_image, hex_col),
-            )
-            export_btn.pack(pady=2)
 
     def save_solution_json(self):
         filepath = filedialog.asksaveasfilename(
@@ -315,50 +327,16 @@ class ColourShiftApp:
         )
 
     def show_candidates(self, candidates, set_surround=True):
-        for widget in self.preview_frame.winfo_children():
-            widget.destroy()
+        mode = "set_surround" if set_surround else "set_base"
+        self.reset_preview(mode)
 
-        if set_surround is True:
-            self.current_mode = "set_surround"
-        else:
-            self.current_mode = "set_base"
-
-        self.preview_label = tk.Label(self.preview_frame, bg="#808080")
-        self.preview_label.pack(side=tk.TOP, pady=5)
-        self.update_preview_label()
+        def click_handler_factory(hex_col):
+            if set_surround:
+                return lambda _event: self.set_surround(hex_col)
+            return lambda _event: self.set_base(hex_col)
 
         for rgb, dE in candidates:
-            hex_col = rgb_to_hex(rgb)
-            patch_frame = tk.Frame(self.preview_frame)
-            patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
-
-            canvas = tk.Canvas(
-                patch_frame,
-                width=100,
-                height=100,
-                highlightthickness=1,
-                highlightbackground="black",
-            )
-            canvas.create_rectangle(0, 0, 100, 100, fill=hex_col, width=0)
-
-            if set_surround:
-                canvas.bind("<Button-1>", lambda e, c=hex_col: self.set_surround(c))
-            else:
-                canvas.bind("<Button-1>", lambda e, c=hex_col: self.set_base(c))
-            canvas.pack()
-
-            label = tk.Label(patch_frame, text=f"ΔE = {dE:.2f}", bg="white", fg="black")
-            label.pack()
-
-    def set_base(self, hex_color):
-        self.base_color = hex_color
-        self.base_display.delete("all")
-        self.base_display.create_rectangle(0, 0, 60, 60, fill=self.base_color, width=0)
-
-    def set_surround(self, hex_color):
-        self.original_surround = hex_color
-        self.surround_display.delete("all")
-        self.surround_display.create_rectangle(0, 0, 60, 60, fill=self.original_surround, width=0)
+            self.create_result_patch(rgb, dE, click_handler_factory=click_handler_factory)
 
 
 def main():

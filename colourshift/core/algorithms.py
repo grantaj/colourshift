@@ -1,14 +1,18 @@
 import logging
 import warnings
 
-import colour
 import numpy as np
-from colour.appearance import XYZ_to_CIECAM02
-from colour.difference import delta_E_CAM02UCS
-from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS
 
+from ._colour_warnings import suppress_colour_optional_dependency_warnings
 from .colour_models import is_valid_JMh, rgb_to_XYZ
 from .config import DEFAULT_CONFIG
+
+suppress_colour_optional_dependency_warnings()
+
+import colour  # noqa: E402
+from colour.appearance import XYZ_to_CIECAM02  # noqa: E402
+from colour.difference import delta_E_CAM02UCS  # noqa: E402
+from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

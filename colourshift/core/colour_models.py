@@ -1,7 +1,12 @@
 import re
 
-import colour
 import numpy as np
+
+from ._colour_warnings import suppress_colour_optional_dependency_warnings
+
+suppress_colour_optional_dependency_warnings()
+
+import colour  # noqa: E402
 
 HEX_COLOR_PATTERN = re.compile(r"^#?[0-9a-fA-F]{6}$")
 
