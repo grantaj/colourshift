@@ -1,6 +1,7 @@
 import json
 
 from colourshift.core.algorithms import ColourShiftResult
+from colourshift.core.config import Config
 from colourshift.io import build_solution_payload, create_comparison_image, save_solution_json
 
 
@@ -27,6 +28,29 @@ def test_build_solution_payload_serialises_candidates():
                 "deltaE": 12.34,
             },
         ],
+        "search": {},
+    }
+
+
+def test_build_solution_payload_includes_search_metadata():
+    payload = build_solution_payload(
+        "#950000",
+        "#964301",
+        [ColourShiftResult(rgb=[1.0, 0.0, 0.5], delta_e=12.34)],
+        mode="maximal-surround-shift",
+        config=Config(rgb_grid_points=2, min_delta=5.0, max_candidates=1),
+    )
+
+    assert payload["search"] == {
+        "mode": "maximal-surround-shift",
+        "config": {
+            "viewing_condition": "Average",
+            "background_luminance": 20.0,
+            "adapting_luminance": 64.0,
+            "rgb_grid_points": 2,
+            "min_delta": 5.0,
+            "max_candidates": 1,
+        },
     }
 
 

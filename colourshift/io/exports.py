@@ -1,4 +1,5 @@
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -6,7 +7,13 @@ from PIL import Image, ImageDraw
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 
 
-def build_solution_payload(base_hex, surround_hex, candidates):
+def build_solution_payload(base_hex, surround_hex, candidates, mode=None, config=None):
+    search = {}
+    if mode is not None:
+        search["mode"] = mode
+    if config is not None:
+        search["config"] = asdict(config)
+
     return {
         "base_color": {
             "hex": base_hex,
@@ -24,11 +31,12 @@ def build_solution_payload(base_hex, surround_hex, candidates):
             }
             for candidate in candidates
         ],
+        "search": search,
     }
 
 
-def save_solution_json(path, base_hex, surround_hex, candidates):
-    payload = build_solution_payload(base_hex, surround_hex, candidates)
+def save_solution_json(path, base_hex, surround_hex, candidates, mode=None, config=None):
+    payload = build_solution_payload(base_hex, surround_hex, candidates, mode=mode, config=config)
     Path(path).write_text(json.dumps(payload, indent=4), encoding="utf-8")
 
 

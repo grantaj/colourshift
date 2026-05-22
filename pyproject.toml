@@ -12,6 +12,7 @@ dependencies = [
 
 [project.scripts]
 colourshift = "colourshift.ui.tk_app:main"
+colourshift-export = "colourshift.cli:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
