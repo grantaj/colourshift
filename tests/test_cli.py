@@ -2,6 +2,7 @@ import json
 
 from colourshift import cli
 from colourshift.core.algorithms import ColourShiftResult
+from colourshift.io import NEUTRAL_GREY_HEX
 
 
 def test_config_from_args_maps_cli_options():
@@ -66,3 +67,53 @@ def test_cli_writes_json_and_figures(monkeypatch, tmp_path):
     assert payload["search"]["config"]["rgb_grid_points"] == 2
     assert payload["candidates"][0]["hex"] == "#00ff00"
     assert (figures_dir / "1.png").exists()
+
+
+def test_write_figures_uses_neutral_reference_for_sensitive_bases(monkeypatch, tmp_path):
+    calls = []
+
+    monkeypatch.setattr(
+        cli,
+        "save_comparison_image",
+        lambda path, left_base, left_surround, right_base, right_surround: calls.append(
+            (path, left_base, left_surround, right_base, right_surround)
+        ),
+    )
+
+    cli.write_figures(
+        tmp_path,
+        cli.MODE_SENSITIVE_BASES,
+        "#950000",
+        "#964301",
+        [ColourShiftResult(rgb=[0.0, 1.0, 0.0], delta_e=7.5)],
+    )
+
+    assert calls == [
+        (tmp_path / "1.png", "#00ff00", NEUTRAL_GREY_HEX, "#00ff00", "#964301")
+    ]
+
+
+def test_write_figures_uses_self_surround_reference_for_strongest_surrounds(
+    monkeypatch, tmp_path
+):
+    calls = []
+
+    monkeypatch.setattr(
+        cli,
+        "save_comparison_image",
+        lambda path, left_base, left_surround, right_base, right_surround: calls.append(
+            (path, left_base, left_surround, right_base, right_surround)
+        ),
+    )
+
+    cli.write_figures(
+        tmp_path,
+        cli.MODE_STRONGEST_SURROUNDS,
+        "#950000",
+        "#964301",
+        [ColourShiftResult(rgb=[0.0, 0.0, 0.0], delta_e=7.5)],
+    )
+
+    assert calls == [
+        (tmp_path / "1.png", "#950000", "#950000", "#950000", "#000000")
+    ]

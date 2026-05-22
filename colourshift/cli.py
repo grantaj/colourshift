@@ -4,7 +4,7 @@ from pathlib import Path
 from colourshift.core.algorithms import compute_appearance_difference, find_extreme_shift_colors
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 from colourshift.core.config import Config
-from colourshift.io import save_comparison_image, save_solution_json
+from colourshift.io import NEUTRAL_GREY_HEX, save_comparison_image, save_solution_json
 
 MODE_MAXIMAL_SURROUND_SHIFT = "maximal-surround-shift"
 MODE_STRONGEST_SURROUNDS = "strongest-surrounds"
@@ -70,16 +70,26 @@ def write_figures(figures_dir, mode, base_hex, surround_hex, candidates):
 
     for index, candidate in enumerate(candidates, start=1):
         if mode == MODE_SENSITIVE_BASES:
-            figure_base = rgb_to_hex(candidate.rgb)
-            figure_surround = surround_hex
+            left_base = rgb_to_hex(candidate.rgb)
+            left_surround = NEUTRAL_GREY_HEX
+            right_base = left_base
+            right_surround = surround_hex
+        elif mode == MODE_STRONGEST_SURROUNDS:
+            left_base = base_hex
+            left_surround = base_hex
+            right_base = base_hex
+            right_surround = rgb_to_hex(candidate.rgb)
         else:
-            figure_base = base_hex
-            figure_surround = rgb_to_hex(candidate.rgb)
+            left_base = base_hex
+            left_surround = surround_hex
+            right_base = base_hex
+            right_surround = rgb_to_hex(candidate.rgb)
         save_comparison_image(
             output_dir / f"{index}.png",
-            figure_base,
-            surround_hex,
-            figure_surround,
+            left_base,
+            left_surround,
+            right_base,
+            right_surround,
         )
 
 

@@ -308,7 +308,13 @@ class ColourShiftApp:
         if not file_path:
             return
 
-        save_comparison_image(file_path, self.base_color, self.original_surround, hex_color)
+        save_comparison_image(
+            file_path,
+            self.base_color,
+            self.original_surround,
+            self.base_color,
+            hex_color,
+        )
 
     def find_shifted_surrounds(self):
         base_rgb = hex_to_rgb(self.base_color)

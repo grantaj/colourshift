@@ -55,7 +55,7 @@ def test_build_solution_payload_includes_search_metadata():
 
 
 def test_save_solution_json_writes_payload(tmp_path):
-    path = tmp_path / "solution.json"
+    path = tmp_path / "nested" / "solution.json"
 
     save_solution_json(
         path,
@@ -77,6 +77,7 @@ def test_create_comparison_image_draws_expected_regions():
     image = create_comparison_image(
         "#ff0000",
         "#00ff00",
+        "#ff00ff",
         "#0000ff",
         size=(100, 50),
         box_size=5,
@@ -86,4 +87,4 @@ def test_create_comparison_image_draws_expected_regions():
     assert image.getpixel((10, 10)) == (0, 255, 0)
     assert image.getpixel((75, 10)) == (0, 0, 255)
     assert image.getpixel((25, 25)) == (255, 0, 0)
-    assert image.getpixel((75, 25)) == (255, 0, 0)
+    assert image.getpixel((75, 25)) == (255, 0, 255)

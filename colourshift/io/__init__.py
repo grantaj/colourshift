@@ -1,4 +1,5 @@
 from .exports import (
+    NEUTRAL_GREY_HEX,
     build_solution_payload,
     create_comparison_image,
     save_comparison_image,
@@ -6,6 +7,7 @@ from .exports import (
 )
 
 __all__ = [
+    "NEUTRAL_GREY_HEX",
     "build_solution_payload",
     "create_comparison_image",
     "save_comparison_image",

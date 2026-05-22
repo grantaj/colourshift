@@ -7,6 +7,9 @@ from PIL import Image, ImageDraw
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 
 
+NEUTRAL_GREY_HEX = "#808080"
+
+
 def build_solution_payload(base_hex, surround_hex, candidates, mode=None, config=None):
     search = {}
     if mode is not None:
@@ -37,11 +40,18 @@ def build_solution_payload(base_hex, surround_hex, candidates, mode=None, config
 
 def save_solution_json(path, base_hex, surround_hex, candidates, mode=None, config=None):
     payload = build_solution_payload(base_hex, surround_hex, candidates, mode=mode, config=config)
-    Path(path).write_text(json.dumps(payload, indent=4), encoding="utf-8")
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
 
 
 def create_comparison_image(
-    base_hex, original_surround_hex, candidate_surround_hex, size=(300, 150), box_size=20
+    left_base_hex,
+    left_surround_hex,
+    right_base_hex,
+    right_surround_hex,
+    size=(300, 150),
+    box_size=20,
 ):
     image = Image.new("RGB", size, "white")
     draw = ImageDraw.Draw(image)
@@ -49,7 +59,7 @@ def create_comparison_image(
     left_center = (size[0] // 4, size[1] // 2)
     right_center = (3 * size[0] // 4, size[1] // 2)
 
-    draw.rectangle([0, 0, size[0] // 2, size[1]], fill=original_surround_hex)
+    draw.rectangle([0, 0, size[0] // 2, size[1]], fill=left_surround_hex)
     draw.rectangle(
         [
             left_center[0] - box_size,
@@ -57,10 +67,10 @@ def create_comparison_image(
             left_center[0] + box_size,
             left_center[1] + box_size,
         ],
-        fill=base_hex,
+        fill=left_base_hex,
     )
 
-    draw.rectangle([size[0] // 2, 0, size[0], size[1]], fill=candidate_surround_hex)
+    draw.rectangle([size[0] // 2, 0, size[0], size[1]], fill=right_surround_hex)
     draw.rectangle(
         [
             right_center[0] - box_size,
@@ -68,12 +78,23 @@ def create_comparison_image(
             right_center[0] + box_size,
             right_center[1] + box_size,
         ],
-        fill=base_hex,
+        fill=right_base_hex,
     )
 
     return image
 
 
-def save_comparison_image(path, base_hex, original_surround_hex, candidate_surround_hex):
-    image = create_comparison_image(base_hex, original_surround_hex, candidate_surround_hex)
+def save_comparison_image(
+    path,
+    left_base_hex,
+    left_surround_hex,
+    right_base_hex,
+    right_surround_hex,
+):
+    image = create_comparison_image(
+        left_base_hex,
+        left_surround_hex,
+        right_base_hex,
+        right_surround_hex,
+    )
     image.save(path)
