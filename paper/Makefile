@@ -12,17 +12,18 @@ all: $(OUT)
 
 $(OUT): $(SRC) $(BIB) $(TPL) $(CSS) $(FILTER)
 	@mkdir -p $(OUTDIR)
-	$(PANDOC) $(SRC) \
+	cd $(OUTDIR) && $(PANDOC) ../paper/$(SRC) \
 	  --standalone \
 	  --mathjax \
 	  --citeproc \
 	  --toc \
-	  --bibliography=$(BIB) \
-	  --lua-filter=$(FILTER) \
-	  --template=$(TPL) \
-	  --resource-path=. \
-	  --extract-media=$(OUTDIR)/assets \
-	  -o $(OUT)
+	  --bibliography=../paper/$(BIB) \
+	  --lua-filter=../paper/$(FILTER) \
+	  --template=../paper/$(TPL) \
+	  --resource-path=../paper \
+	  --extract-media=assets \
+	  -o index.html
+	sed -i 's#\.\./docs/assets/#assets/#g' $(OUT)
 	cp $(CSS) $(OUTDIR)/style.css
 	touch $(OUTDIR)/.nojekyll
 	@echo "Built -> $(OUT)"
