@@ -1,11 +1,10 @@
 import tkinter as tk
 from tkinter import colorchooser, ttk, filedialog
 from functools import partial
-import json
-from PIL import Image, ImageDraw
 
 from colourshift.core.algorithms import compute_appearance_difference, find_extreme_shift_colors
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
+from colourshift.io import save_comparison_image, save_solution_json
 from .widgets import ToolTip
 
 class ColourShiftApp:
@@ -182,65 +181,20 @@ class ColourShiftApp:
 
 
     def save_solution_json(self):
-
-            base_rgb = hex_to_rgb(self.base_color)
-            surround_rgb = hex_to_rgb(self.original_surround)
-
-            data = {
-                "base_color": {
-                    "hex": self.base_color,
-                    "rgb": base_rgb
-                },
-                "surround_color": {
-                    "hex": self.original_surround,
-                    "rgb": surround_rgb
-                },
-                "candidates": [
-                    {
-                        "hex": rgb_to_hex(rgb),
-                        "rgb": rgb,
-                        "deltaE": dE
-                    } for rgb, dE in self.results
-                ]
-            }
-
-            filepath = filedialog.asksaveasfilename(
-                defaultextension=".json",
-                filetypes=[("JSON files", "*.json")],
-                title="Save Solution As"
-            )
-            if filepath:
-                with open(filepath, "w") as f:
-                    json.dump(data, f, indent=4)
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Save Solution As",
+        )
+        if filepath:
+            save_solution_json(filepath, self.base_color, self.original_surround, self.results)
 
     def export_comparison_image(self, hex_color):
         file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")])
         if not file_path:
             return
 
-        size = (300, 150)
-        box_size = 20
-
-        img = Image.new("RGB", (size[0], size[1]), "white")
-        draw = ImageDraw.Draw(img)
-
-        # Left half with original surround
-        draw.rectangle([0, 0, size[0] // 2, size[1]], fill=self.original_surround)
-        left_center = (size[0] // 4, size[1] // 2)
-        draw.rectangle([
-            left_center[0] - box_size, left_center[1] - box_size,
-            left_center[0] + box_size, left_center[1] + box_size
-        ], fill=self.base_color)
-
-        # Right half with candidate
-        draw.rectangle([size[0] // 2, 0, size[0], size[1]], fill=hex_color)
-        right_center = (3 * size[0] // 4, size[1] // 2)
-        draw.rectangle([
-            right_center[0] - box_size, right_center[1] - box_size,
-            right_center[0] + box_size, right_center[1] + box_size
-        ], fill=self.base_color)
-
-        img.save(file_path)
+        save_comparison_image(file_path, self.base_color, self.original_surround, hex_color)
 
     def find_shifted_surrounds(self):
         base_rgb = hex_to_rgb(self.base_color)

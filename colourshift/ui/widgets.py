@@ -1,5 +1,6 @@
 import tkinter as tk
-# UI helper widgets
+
+
 class ToolTip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -11,15 +12,24 @@ class ToolTip:
     def show_tip(self, event=None):
         if self.tip_window or not self.text:
             return
-        x, y, _, cy = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + cy + 25
+        if event is not None:
+            x = event.x_root + 20
+            y = event.y_root + 10
+        else:
+            x = self.widget.winfo_rootx() + 20
+            y = self.widget.winfo_rooty() + self.widget.winfo_height() + 10
         self.tip_window = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.geometry(f"+{x}+{y}")
-        label = tk.Label(tw, text=self.text, justify=tk.LEFT,
-                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
-                         font=("tahoma", "9", "normal"))
+        label = tk.Label(
+            tw,
+            text=self.text,
+            justify=tk.LEFT,
+            background="#ffffe0",
+            relief=tk.SOLID,
+            borderwidth=1,
+            font=("tahoma", "9", "normal"),
+        )
         label.pack(ipadx=1)
 
     def hide_tip(self, event=None):
@@ -27,5 +37,4 @@ class ToolTip:
         self.tip_window = None
         if tw:
             tw.destroy()
-
 
