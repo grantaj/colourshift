@@ -1,0 +1,59 @@
+$if(lang)$
+<!doctype html>
+<html lang="$lang$">
+$else$
+<!doctype html>
+<html lang="en">
+$endif$
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>$if(title-prefix)$$title-prefix$ - $endif$$pagetitle$</title>
+  <meta name="description" content="$if(abstract)$$abstract$$else$$pagetitle$$endif$" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
+  <link rel="stylesheet" href="style.css" />
+  $if(highlighting-css)$
+  <style>$highlighting-css$</style>
+  $endif$
+  $if(title)$<meta property="og:title" content="$title$" />$endif$
+  $if(abstract)$<meta property="og:description" content="$abstract$" />$endif$
+  <meta property="og:type" content="article" />
+  <meta name="theme-color" content="#111111" />
+</head>
+<body>
+  <main class="wrap prose">
+    <header class="essay-header">
+      <h1 class="essay-title">$title$</h1>
+      $if(author)$<div class="essay-byline">by $for(author)$$author$$sep$, $endfor$</div>$endif$
+      $if(date)$<div class="essay-date">$date$</div>$endif$
+    </header>
+
+    $if(abstract)$
+    <section class="abstract">
+      <h2>Abstract</h2>
+      <div class="abstract-copy">$abstract$</div>
+    </section>
+    $endif$
+
+    $if(toc)$
+    <nav id="TOC" role="doc-toc" class="toc">
+      <h2>Contents</h2>
+      $toc$
+    </nav>
+    $endif$
+
+    $body$
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><em>$title$</em> - generated from LaTeX via Pandoc.$if(author)$ &middot; $for(author)$$author$$sep$, $endfor$$endif$</p>
+      <p><a href="https://github.com/grantaj/colourshift">View source on GitHub</a></p>
+    </div>
+  </footer>
+
+  <script defer id="MathJax-script"
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</body>
+</html>
