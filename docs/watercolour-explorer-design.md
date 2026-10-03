@@ -64,7 +64,7 @@ Geometry:
   - one continuous slider;
   - 0 = circle;
   - 1 = square;
-  - 2 = rounded cross;
+  - 2 = Greek cross / cruciform;
   - intermediate values smoothly interpolate between those shapes.
 - Field width
 - Ribbon width
@@ -105,7 +105,7 @@ The default should show an obvious annular white band between an inner and outer
 
 Default shape morph = 0 (circle).
 
-The shape control must morph both annular boundaries coherently. Use a normalized radial shape factor so the inner and outer boundaries remain nested through the full circle → square → cross transition. The square stage uses the exact radial distance to an axis-aligned square with fixed circumradius. The cross stage is a smooth fourfold radial form with axial arms and recessed diagonals.
+The shape control must morph both annular boundaries coherently. Use a normalized radial shape factor so the inner and outer boundaries remain nested through the full circle → square → Greek-cross transition. The square stage uses the exact radial distance to an axis-aligned square with fixed circumradius. The cross endpoint is the exact radial boundary of the union of equal horizontal and vertical rectangles, normalized to a fixed circumradius, giving a true Greek-cross/cruciform outline with rectilinear arms and re-entrant corners.
 
 Reset restores this state.
 
@@ -123,7 +123,9 @@ Invalid slider combinations should be clamped.
 
 Use dense path sampling:
 
-    sample count = max(720, 48n)
+    sample count = max(1440, 96n)
+
+Place the closed-path seam on a symmetry axis. Use cosine-phase waviness so the radial waviness derivative is zero at the seam; circle, square and Greek-cross base shapes also have zero radial slope there. This minimizes any artificial tangent kink at SVG path closure.
 
 ## Wavelength
 
