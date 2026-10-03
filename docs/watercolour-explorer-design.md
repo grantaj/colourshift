@@ -131,9 +131,19 @@ Place the closed-path seam on a symmetry axis. Use cosine-phase waviness so the 
 
 Closed geometry stores an integer wave count `n`.
 
-Display approximate wavelength using:
+Waviness must be parameterized by **normalized arc length around the un-wavy base contour**, not by polar angle. Equal increments of polar angle correspond to unequal travelled distances on square and Greek-cross segments and therefore produce visibly different wavelengths on different parts of the shape.
 
-    lambda = 2 pi R / n
+Implementation:
+
+1. sample the un-wavy base contour densely;
+2. compute cumulative Euclidean arc length around the closed contour;
+3. normalize cumulative length to `s in [0, 1)`;
+4. use wave phase `2 pi n s`;
+5. apply the same normalized arc-length phase map to all nested contours so their crests remain aligned.
+
+Display approximate wavelength using the actual base-shape perimeter:
+
+    lambda = perimeter / n
 
 Do not permit fractional cycles that leave a seam.
 
