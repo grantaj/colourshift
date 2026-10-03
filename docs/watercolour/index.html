@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watercolour Explorer — ColourShift</title>
+  <meta
+    name="description"
+    content="A manual SVG explorer for Watercolour Effect double-contour stimuli."
+  />
+  <meta name="theme-color" content="#f4f1ec" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
+  <link rel="stylesheet" href="watercolour.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="back-link" href="../index.html">← ColourShift essay</a>
+    <div class="title-block">
+      <p class="eyebrow">ColourShift studio tool</p>
+      <h1>Watercolour Explorer</h1>
+      <p class="lede">
+        Explore double-contour Watercolour Effect stimuli by eye. This page draws the stimulus
+        directly as SVG; it does not run the prediction model or optimise the colours.
+      </p>
+    </div>
+  </header>
+
+  <main class="explorer-shell">
+    <section class="preview-panel" aria-labelledby="preview-heading">
+      <h2 id="preview-heading" class="visually-hidden">Stimulus preview</h2>
+      <div class="stage">
+        <svg
+          id="stimulus"
+          viewBox="0 0 760 760"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-labelledby="stimulus-title"
+        >
+          <title id="stimulus-title">Interactive watercolour-effect double-contour stimulus</title>
+          <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+          <path id="outer-ribbon" fill="#4f2a78" fill-rule="evenodd"></path>
+          <path id="inner-ribbon" fill="#ff8a16" fill-rule="evenodd"></path>
+          <path id="field" fill="#ffffff"></path>
+        </svg>
+      </div>
+      <p class="preview-note">
+        The white field is physically unchanged. Adjust the two enclosing ribbons and their
+        geometry, then judge the apparent colour in the field.
+      </p>
+    </section>
+
+    <aside class="controls-panel" aria-label="Explorer controls">
+      <form id="controls">
+        <fieldset>
+          <legend>Geometry</legend>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="radius">Overall scale</label>
+              <output id="radius-value" for="radius"></output>
+            </div>
+            <input id="radius" type="range" min="90" max="240" step="1" value="180" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="ribbon-width">Ribbon width</label>
+              <output id="ribbon-width-value" for="ribbon-width"></output>
+            </div>
+            <input id="ribbon-width" type="range" min="2" max="30" step="1" value="10" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="amplitude">Waviness amplitude</label>
+              <output id="amplitude-value" for="amplitude"></output>
+            </div>
+            <input id="amplitude" type="range" min="0" max="60" step="1" value="18" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading control-heading-stacked">
+              <label for="waves">Waves / wavelength</label>
+              <output id="waves-value" for="waves"></output>
+            </div>
+            <input id="waves" type="range" min="2" max="30" step="1" value="10" />
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Ribbon colours</legend>
+
+          <div class="colour-control">
+            <label for="inner-colour">Inner ribbon</label>
+            <div class="colour-inputs">
+              <input
+                id="inner-colour"
+                class="colour-picker"
+                type="color"
+                value="#ff8a16"
+                aria-label="Inner ribbon colour"
+              />
+              <label class="visually-hidden" for="inner-hex">Inner ribbon hexadecimal colour</label>
+              <input
+                id="inner-hex"
+                class="hex-input"
+                type="text"
+                value="#FF8A16"
+                maxlength="7"
+                spellcheck="false"
+                autocomplete="off"
+                aria-label="Inner ribbon hexadecimal colour"
+              />
+            </div>
+          </div>
+
+          <div class="colour-control">
+            <label for="outer-colour">Outer ribbon</label>
+            <div class="colour-inputs">
+              <input
+                id="outer-colour"
+                class="colour-picker"
+                type="color"
+                value="#4f2a78"
+                aria-label="Outer ribbon colour"
+              />
+              <label class="visually-hidden" for="outer-hex">Outer ribbon hexadecimal colour</label>
+              <input
+                id="outer-hex"
+                class="hex-input"
+                type="text"
+                value="#4F2A78"
+                maxlength="7"
+                spellcheck="false"
+                autocomplete="off"
+                aria-label="Outer ribbon hexadecimal colour"
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button id="reset" class="button secondary" type="button">Reset</button>
+          <button id="save-svg" class="button primary" type="button">Save as SVG</button>
+        </div>
+
+        <p class="export-note">
+          SVG export uses the exact preview geometry and includes the current parameters as metadata.
+        </p>
+      </form>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <a href="../index.html">Essay</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://github.com/grantaj/colourshift">Source</a>
+  </footer>
+
+  <script src="watercolour.js"></script>
+</body>
+</html>
