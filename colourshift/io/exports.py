@@ -6,7 +6,6 @@ from PIL import Image, ImageDraw
 
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 
-
 NEUTRAL_GREY_HEX = "#808080"
 
 

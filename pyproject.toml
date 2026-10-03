@@ -8,11 +8,13 @@ dependencies = [
     "colour-science>=0.4",
     "numpy>=1.24",
     "Pillow>=10",
+    "scipy>=1.10",
 ]
 
 [project.scripts]
 colourshift = "colourshift.ui.tk_app:main"
 colourshift-export = "colourshift.cli:main"
+colourshift-watercolour = "colourshift.watercolour.cli:main"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

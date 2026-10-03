@@ -88,14 +88,10 @@ def test_write_figures_uses_neutral_reference_for_sensitive_bases(monkeypatch, t
         [ColourShiftResult(rgb=[0.0, 1.0, 0.0], delta_e=7.5)],
     )
 
-    assert calls == [
-        (tmp_path / "1.png", "#00ff00", NEUTRAL_GREY_HEX, "#00ff00", "#964301")
-    ]
+    assert calls == [(tmp_path / "1.png", "#00ff00", NEUTRAL_GREY_HEX, "#00ff00", "#964301")]
 
 
-def test_write_figures_uses_self_surround_reference_for_strongest_surrounds(
-    monkeypatch, tmp_path
-):
+def test_write_figures_uses_self_surround_reference_for_strongest_surrounds(monkeypatch, tmp_path):
     calls = []
 
     monkeypatch.setattr(
@@ -114,6 +110,4 @@ def test_write_figures_uses_self_surround_reference_for_strongest_surrounds(
         [ColourShiftResult(rgb=[0.0, 0.0, 0.0], delta_e=7.5)],
     )
 
-    assert calls == [
-        (tmp_path / "1.png", "#950000", "#950000", "#950000", "#000000")
-    ]
+    assert calls == [(tmp_path / "1.png", "#950000", "#950000", "#950000", "#000000")]
