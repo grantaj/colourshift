@@ -60,6 +60,27 @@ inner:outer width ratio 1:2–2:1, figure diameter 2.3–4.5 degrees, and 4–20
 cycles/revolution. Straight contours, separated contours, amplitude-dependent
 predictions, and geometries outside these ranges are not currently supported.
 
+Contour colours can be optimised against the same forward model while keeping
+geometry fixed. With no geometry supplied, the optimiser uses the calibrated
+model maximum and searches only the six inner/outer sRGB channels:
+
+```python
+from colourshift.watercolour import optimise_watercolour
+
+result = optimise_watercolour(field_rgb=(1.0, 1.0, 1.0))
+print(result.inner_rgb, result.outer_rgb, result.prediction.chromatic_shift_uv)
+```
+
+The same search is available from the command line and writes reproducibility
+metadata plus the unclipped model appearance to JSON:
+
+```bash
+uv run colourshift-watercolour optimise \
+    --field "#ffffff" \
+    --output watercolour-optimised.json \
+    --seed 0
+```
+
 Published reproduction utilities remain available for auditing the internal
 edge model:
 
