@@ -3,32 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Watercolour Explorer — ColourShift</title>
-  <meta
-    name="description"
-    content="A manual SVG explorer for Watercolour Effect double-contour stimuli."
-  />
-  <meta name="theme-color" content="#f4f1ec" />
+  <title>Watercolour Explorer</title>
+  <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
+  <meta name="theme-color" content="#ffffff" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
   <link rel="stylesheet" href="watercolour.css" />
 </head>
 <body>
   <header class="site-header">
-    <a class="back-link" href="../index.html">← ColourShift essay</a>
-    <div class="title-block">
-      <p class="eyebrow">ColourShift studio tool</p>
-      <h1>Watercolour Explorer</h1>
-      <p class="lede">
-        Explore double-contour Watercolour Effect stimuli by eye. This page draws the stimulus
-        directly as SVG; it does not run the prediction model or optimise the colours.
-      </p>
-    </div>
+    <h1>Watercolour Explorer</h1>
   </header>
 
   <main class="explorer-shell">
-    <section class="preview-panel" aria-labelledby="preview-heading">
-      <h2 id="preview-heading" class="visually-hidden">Stimulus preview</h2>
-      <div class="stage">
+    <section class="preview-panel" aria-label="Stimulus preview">
+      <div id="stage" class="stage">
         <svg
           id="stimulus"
           viewBox="0 0 760 760"
@@ -43,10 +31,6 @@
           <path id="field" fill="#ffffff"></path>
         </svg>
       </div>
-      <p class="preview-note">
-        The white field is physically unchanged. Adjust the two enclosing ribbons and their
-        geometry, then judge the apparent colour in the field.
-      </p>
     </section>
 
     <aside class="controls-panel" aria-label="Explorer controls">
@@ -56,7 +40,7 @@
 
           <div class="control">
             <div class="control-heading">
-              <label for="radius">Overall scale</label>
+              <label for="radius">Scale</label>
               <output id="radius-value" for="radius"></output>
             </div>
             <input id="radius" type="range" min="90" max="240" step="1" value="180" />
@@ -72,7 +56,7 @@
 
           <div class="control">
             <div class="control-heading">
-              <label for="amplitude">Waviness amplitude</label>
+              <label for="amplitude">Amplitude</label>
               <output id="amplitude-value" for="amplitude"></output>
             </div>
             <input id="amplitude" type="range" min="0" max="60" step="1" value="18" />
@@ -88,10 +72,10 @@
         </fieldset>
 
         <fieldset>
-          <legend>Ribbon colours</legend>
+          <legend>Colours</legend>
 
           <div class="colour-control">
-            <label for="inner-colour">Inner ribbon</label>
+            <label for="inner-colour">Inner</label>
             <div class="colour-inputs">
               <input
                 id="inner-colour"
@@ -115,7 +99,7 @@
           </div>
 
           <div class="colour-control">
-            <label for="outer-colour">Outer ribbon</label>
+            <label for="outer-colour">Outer</label>
             <div class="colour-inputs">
               <input
                 id="outer-colour"
@@ -140,22 +124,13 @@
         </fieldset>
 
         <div class="actions">
+          <button id="focus-view" class="button secondary wide" type="button">Focus view</button>
           <button id="reset" class="button secondary" type="button">Reset</button>
-          <button id="save-svg" class="button primary" type="button">Save as SVG</button>
+          <button id="save-svg" class="button primary" type="button">Save SVG</button>
         </div>
-
-        <p class="export-note">
-          SVG export uses the exact preview geometry and includes the current parameters as metadata.
-        </p>
       </form>
     </aside>
   </main>
-
-  <footer class="site-footer">
-    <a href="../index.html">Essay</a>
-    <span aria-hidden="true">·</span>
-    <a href="https://github.com/grantaj/colourshift">Source</a>
-  </footer>
 
   <script src="watercolour.js"></script>
 </body>
