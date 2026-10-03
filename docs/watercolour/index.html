@@ -24,11 +24,13 @@
           role="img"
           aria-labelledby="stimulus-title"
         >
-          <title id="stimulus-title">Interactive watercolour-effect double-contour stimulus</title>
+          <title id="stimulus-title">Interactive annular watercolour-effect double-contour stimulus</title>
           <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
-          <path id="outer-ribbon" fill="#4f2a78" fill-rule="evenodd"></path>
-          <path id="inner-ribbon" fill="#ff8a16" fill-rule="evenodd"></path>
-          <path id="field" fill="#ffffff"></path>
+          <path id="field" fill="#ffffff" fill-rule="evenodd"></path>
+          <path id="outer-barrier" fill="#3155a4" fill-rule="evenodd"></path>
+          <path id="outer-inducing" fill="#6ec66a" fill-rule="evenodd"></path>
+          <path id="inner-barrier" fill="#3155a4" fill-rule="evenodd"></path>
+          <path id="inner-inducing" fill="#6ec66a" fill-rule="evenodd"></path>
         </svg>
       </div>
     </section>
@@ -43,7 +45,15 @@
               <label for="radius">Scale</label>
               <output id="radius-value" for="radius"></output>
             </div>
-            <input id="radius" type="range" min="90" max="240" step="1" value="180" />
+            <input id="radius" type="range" min="150" max="240" step="1" value="220" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="field-width">Field width</label>
+              <output id="field-width-value" for="field-width"></output>
+            </div>
+            <input id="field-width" type="range" min="50" max="150" step="1" value="110" />
           </div>
 
           <div class="control">
@@ -51,7 +61,7 @@
               <label for="ribbon-width">Ribbon width</label>
               <output id="ribbon-width-value" for="ribbon-width"></output>
             </div>
-            <input id="ribbon-width" type="range" min="2" max="30" step="1" value="14" />
+            <input id="ribbon-width" type="range" min="2" max="20" step="1" value="8" />
           </div>
 
           <div class="control">
@@ -59,7 +69,7 @@
               <label for="amplitude">Amplitude</label>
               <output id="amplitude-value" for="amplitude"></output>
             </div>
-            <input id="amplitude" type="range" min="0" max="60" step="1" value="18" />
+            <input id="amplitude" type="range" min="0" max="45" step="1" value="15" />
           </div>
 
           <div class="control">
@@ -74,6 +84,15 @@
         <fieldset>
           <legend>Colours</legend>
 
+          <div class="presets" aria-label="Colour presets">
+            <button id="preset-blue-green" class="preset-button active" type="button">
+              Blue / green
+            </button>
+            <button id="preset-red-yellow" class="preset-button" type="button">
+              Red / yellow
+            </button>
+          </div>
+
           <div class="colour-control">
             <label for="inner-colour">Inner</label>
             <div class="colour-inputs">
@@ -81,19 +100,19 @@
                 id="inner-colour"
                 class="colour-picker"
                 type="color"
-                value="#ffb800"
-                aria-label="Inner ribbon colour"
+                value="#6ec66a"
+                aria-label="Inner inducing contour colour"
               />
-              <label class="visually-hidden" for="inner-hex">Inner ribbon hexadecimal colour</label>
+              <label class="visually-hidden" for="inner-hex">Inner inducing contour hexadecimal colour</label>
               <input
                 id="inner-hex"
                 class="hex-input"
                 type="text"
-                value="#FFB800"
+                value="#6EC66A"
                 maxlength="7"
                 spellcheck="false"
                 autocomplete="off"
-                aria-label="Inner ribbon hexadecimal colour"
+                aria-label="Inner inducing contour hexadecimal colour"
               />
             </div>
           </div>
@@ -105,19 +124,19 @@
                 id="outer-colour"
                 class="colour-picker"
                 type="color"
-                value="#525cd9"
-                aria-label="Outer ribbon colour"
+                value="#3155a4"
+                aria-label="Outer barrier contour colour"
               />
-              <label class="visually-hidden" for="outer-hex">Outer ribbon hexadecimal colour</label>
+              <label class="visually-hidden" for="outer-hex">Outer barrier contour hexadecimal colour</label>
               <input
                 id="outer-hex"
                 class="hex-input"
                 type="text"
-                value="#525CD9"
+                value="#3155A4"
                 maxlength="7"
                 spellcheck="false"
                 autocomplete="off"
-                aria-label="Outer ribbon hexadecimal colour"
+                aria-label="Outer barrier contour hexadecimal colour"
               />
             </div>
           </div>
