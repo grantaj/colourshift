@@ -15,11 +15,11 @@ const LIMITS = Object.freeze({
 
 const DEFAULT_STATE = Object.freeze({
   radius: 180,
-  ribbonWidth: 10,
+  ribbonWidth: 14,
   amplitude: 18,
-  waves: 10,
-  innerColour: "#ff8a16",
-  outerColour: "#4f2a78",
+  waves: 12,
+  innerColour: "#ffb800",
+  outerColour: "#525cd9",
 });
 
 const state = { ...DEFAULT_STATE };
