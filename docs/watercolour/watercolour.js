@@ -86,11 +86,16 @@ function clampState() {
     clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
   );
 
+  const minimumOuterRadius =
+    LIMITS.fieldWidth[0] +
+    state.amplitude +
+    2 * state.ribbonWidth +
+    CENTRE_MARGIN;
   const maximumOuterRadius =
     MAX_EXTENT - state.amplitude - 2 * state.ribbonWidth;
   state.radius = clamp(
     Number(state.radius),
-    LIMITS.radius[0],
+    Math.max(LIMITS.radius[0], minimumOuterRadius),
     Math.min(LIMITS.radius[1], maximumOuterRadius),
   );
 
