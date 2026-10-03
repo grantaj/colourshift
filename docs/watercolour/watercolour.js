@@ -26,6 +26,7 @@ const state = { ...DEFAULT_STATE };
 
 const elements = {
   svg: document.getElementById("stimulus"),
+  stage: document.getElementById("stage"),
   field: document.getElementById("field"),
   innerRibbon: document.getElementById("inner-ribbon"),
   outerRibbon: document.getElementById("outer-ribbon"),
@@ -41,6 +42,7 @@ const elements = {
   outerColour: document.getElementById("outer-colour"),
   innerHex: document.getElementById("inner-hex"),
   outerHex: document.getElementById("outer-hex"),
+  focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
 };
@@ -241,6 +243,37 @@ function bindColourPicker(picker, textInput, key) {
   });
 }
 
+
+async function enterFocusView() {
+  document.body.classList.add("focus-mode");
+
+  if (document.fullscreenElement === null && document.documentElement.requestFullscreen) {
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch {
+      // Focus mode still works inside the browser viewport when fullscreen is unavailable.
+    }
+  }
+}
+
+async function exitFocusView() {
+  document.body.classList.remove("focus-mode");
+
+  if (document.fullscreenElement !== null && document.exitFullscreen) {
+    try {
+      await document.exitFullscreen();
+    } catch {
+      // The page UI has already been restored.
+    }
+  }
+}
+
+function syncFocusMode() {
+  if (document.fullscreenElement === null) {
+    document.body.classList.remove("focus-mode");
+  }
+}
+
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
   render();
@@ -352,6 +385,19 @@ bindColourPicker(
   elements.outerHex,
   "outerColour",
 );
+
+elements.focusView.addEventListener("click", enterFocusView);
+elements.stage.addEventListener("click", function () {
+  if (document.body.classList.contains("focus-mode")) {
+    exitFocusView();
+  }
+});
+document.addEventListener("fullscreenchange", syncFocusMode);
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && document.body.classList.contains("focus-mode")) {
+    exitFocusView();
+  }
+});
 
 elements.reset.addEventListener("click", resetExplorer);
 elements.saveSvg.addEventListener("click", downloadSvg);
