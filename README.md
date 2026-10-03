@@ -1,60 +1,87 @@
 # ColourShift
 
-ColourShift is a small Tk application for exploring how a colour's perceived
-appearance changes when its surrounding colour changes. It uses CIECAM02 and
-CAM02-UCS calculations through `colour-science` to search for surround/base
-colour combinations that produce large perceptual shifts.
+ColourShift explores colour appearance and contextual colour effects. The main
+Tk application uses CIECAM02/CAM02-UCS to search for surround/base colour
+combinations that produce large predicted perceptual shifts.
 
-The app is intended as an exploratory tool: pick a base colour and a surround
-colour, run one of the searches, then inspect or export the resulting colour
-patches.
+The repository also contains an experimental Watercolour Effect (WCE) forward
+model. It combines a reproduction of the Cohen-Duwek & Spitzer edge/filling-in
+model with a calibrated geometry term expressed in visual-angle units.
 
 ## Install
+
 ```bash
 uv sync
 ```
 
-## Run
+## Run the application
+
 ```bash
 uv run colourshift
 ```
 
-## Using The App
-
-The two swatches at the top are the current base colour and surround colour.
-Click either swatch to choose a new colour. The preset selector loads a few
-example base/surround pairs.
-
 The main actions are:
 
-- `Maximal Shift`: keeps the current base colour fixed and searches for
-  alternative surround colours that make it appear most different from the
-  current base/surround pair.
-- `Sensitive Bases`: keeps the current surround colour fixed and searches for
-  base colours whose appearance is strongly affected by that surround.
-- `Strongest Surrounds`: keeps the current base colour fixed and searches for
-  surround colours that most strongly affect its appearance.
+- `Maximal Shift`: keep the current base colour fixed and search alternative
+  surrounds.
+- `Sensitive Bases`: keep the surround fixed and search for sensitive bases.
+- `Strongest Surrounds`: search surrounds that most strongly affect the base.
 
 The `Min ΔE` slider controls how different returned candidates must be from
-each other in CAM02-UCS space. Higher values produce more separated, less
-similar candidates.
+each other in CAM02-UCS space.
 
-Click a result patch to either compare it with the original pair or set it as
-the current base/surround, depending on the active mode. `Save JSON` exports
-the current colours and result candidates. Result comparisons can also be
-exported as PNG images.
+## Watercolour Effect model
+
+The supported WCE API is:
+
+```python
+from colourshift.watercolour import WatercolourGeometry, predict_watercolour
+
+prediction = predict_watercolour(
+    field_rgb=(1.0, 1.0, 1.0),
+    inner_rgb=(1.0, 0.72, 0.0),
+    outer_rgb=(0.32, 0.36, 0.85),
+    geometry=WatercolourGeometry(),
+)
+
+print(prediction.chromatic_shift_uv)
+```
+
+`chromatic_shift_uv` is the model's chromatic WCE score: displacement in
+CIE 1976 u'v' chromaticity, matching the coordinate system used in the
+published WCE comparison. Relative luminance shift is reported separately.
+The model does not claim a unified perceptual ΔE because its uncalibrated
+filling-in magnitude can produce appearance coordinates outside display gamut.
+Raw opponent-channel magnitude is not treated as a perceptual distance.
+
+The geometry model is restricted to the experimental domain used to calibrate
+it: adjacent, visibly wavy double contours with total width 6–24 arcmin,
+inner:outer width ratio 1:2–2:1, figure diameter 2.3–4.5 degrees, and 4–20 contour
+cycles/revolution. Straight contours, separated contours, amplitude-dependent
+predictions, and geometries outside these ranges are not currently supported.
+
+Published reproduction utilities remain available for auditing the internal
+edge model:
+
+```bash
+uv run colourshift-watercolour figure3
+uv run colourshift-watercolour figure4
+```
+
+These are reproduction/audit commands, not alternate production models.
 
 ## Notes
 
-The current search is a brute-force RGB grid search, so results are approximate
-and depend on the configured grid density. The implementation is deliberately
-small and interactive; deeper scientific context belongs in the accompanying
-paper rather than this README.
+Both the surround-colour search and the WCE model are exploratory scientific
+tools rather than calibrated observer models. The WCE geometry functions encode
+published psychophysical scales plus explicit modelling assumptions; calibration
+tests for those functions are not independent validation.
 
 ## Development
+
 ```bash
 uv sync
-uv run pytest
 uv run ruff check .
-uv run ruff format .
+uv run ruff format --check .
+uv run pytest
 ```

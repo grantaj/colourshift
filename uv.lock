@@ -58,6 +58,7 @@ dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pillow" },
+    { name = "scipy" },
 ]
 
 [package.dev-dependencies]
@@ -71,6 +72,7 @@ requires-dist = [
     { name = "colour-science", specifier = ">=0.4" },
     { name = "numpy", specifier = ">=1.24" },
     { name = "pillow", specifier = ">=10" },
+    { name = "scipy", specifier = ">=1.10" },
 ]
 
 [package.metadata.requires-dev]
