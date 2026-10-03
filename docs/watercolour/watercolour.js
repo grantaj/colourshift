@@ -6,10 +6,12 @@ const CENTRE = VIEWBOX_SIZE / 2;
 const EDGE_MARGIN = 20;
 const CENTRE_MARGIN = 20;
 const MAX_EXTENT = CENTRE - EDGE_MARGIN;
+const CROSS_MIN_FACTOR = 0.62;
 
 const LIMITS = Object.freeze({
   radius: [150, 240],
   fieldWidth: [50, 150],
+  shape: [0, 2],
   ribbonWidth: [2, 20],
   amplitude: [0, 45],
   waves: [2, 30],
@@ -29,6 +31,7 @@ const PRESETS = Object.freeze({
 const DEFAULT_STATE = Object.freeze({
   radius: 220,
   fieldWidth: 110,
+  shape: 0,
   ribbonWidth: 8,
   amplitude: 15,
   waves: 12,
@@ -48,11 +51,13 @@ const elements = {
   innerInducing: document.getElementById("inner-inducing"),
   radius: document.getElementById("radius"),
   fieldWidth: document.getElementById("field-width"),
+  shape: document.getElementById("shape"),
   ribbonWidth: document.getElementById("ribbon-width"),
   amplitude: document.getElementById("amplitude"),
   waves: document.getElementById("waves"),
   radiusValue: document.getElementById("radius-value"),
   fieldWidthValue: document.getElementById("field-width-value"),
+  shapeValue: document.getElementById("shape-value"),
   ribbonWidthValue: document.getElementById("ribbon-width-value"),
   amplitudeValue: document.getElementById("amplitude-value"),
   wavesValue: document.getElementById("waves-value"),
@@ -72,6 +77,11 @@ function clamp(value, minimum, maximum) {
 }
 
 function clampState() {
+  state.shape = clamp(
+    Number(state.shape),
+    LIMITS.shape[0],
+    LIMITS.shape[1],
+  );
   state.ribbonWidth = clamp(
     Number(state.ribbonWidth),
     LIMITS.ribbonWidth[0],
@@ -86,11 +96,11 @@ function clampState() {
     clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
   );
 
+  const minimumInnerBaseRadius =
+    (CENTRE_MARGIN + state.amplitude + 2 * state.ribbonWidth) /
+    CROSS_MIN_FACTOR;
   const minimumOuterRadius =
-    LIMITS.fieldWidth[0] +
-    state.amplitude +
-    2 * state.ribbonWidth +
-    CENTRE_MARGIN;
+    LIMITS.fieldWidth[0] + minimumInnerBaseRadius;
   const maximumOuterRadius =
     MAX_EXTENT - state.amplitude - 2 * state.ribbonWidth;
   state.radius = clamp(
@@ -100,10 +110,7 @@ function clampState() {
   );
 
   const maximumFieldWidth =
-    state.radius -
-    state.amplitude -
-    2 * state.ribbonWidth -
-    CENTRE_MARGIN;
+    state.radius - minimumInnerBaseRadius;
   state.fieldWidth = clamp(
     Number(state.fieldWidth),
     LIMITS.fieldWidth[0],
@@ -111,21 +118,57 @@ function clampState() {
   );
 }
 
-function pointOnBoundary(radius, amplitude, waves, theta, offset) {
-  const r = radius + amplitude * Math.sin(waves * theta) + offset;
+function smoothstep01(value) {
+  const t = clamp(value, 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function squareRadiusFactor(theta) {
+  const denominator =
+    Math.SQRT2 *
+    Math.max(Math.abs(Math.cos(theta)), Math.abs(Math.sin(theta)));
+  return 1 / denominator;
+}
+
+function crossRadiusFactor(theta) {
+  const axial = Math.pow(Math.abs(Math.cos(2 * theta)), 4);
+  return CROSS_MIN_FACTOR + (1 - CROSS_MIN_FACTOR) * axial;
+}
+
+function shapeRadiusFactor(theta, shape) {
+  const square = squareRadiusFactor(theta);
+
+  if (shape <= 1) {
+    const t = smoothstep01(shape);
+    return 1 + t * (square - 1);
+  }
+
+  const cross = crossRadiusFactor(theta);
+  const t = smoothstep01(shape - 1);
+  return square + t * (cross - square);
+}
+
+function pointOnBoundary(radius, amplitude, waves, shape, theta, offset) {
+  const shapedRadius = radius * shapeRadiusFactor(theta, shape);
+  const r =
+    shapedRadius +
+    amplitude * Math.sin(waves * theta) +
+    offset;
   return [
     CENTRE + r * Math.cos(theta),
     CENTRE + r * Math.sin(theta),
   ];
 }
 
-function sampleBoundary(radius, amplitude, waves, offset) {
+function sampleBoundary(radius, amplitude, waves, shape, offset) {
   const count = Math.max(720, 48 * waves);
   const points = [];
 
   for (let index = 0; index < count; index += 1) {
     const theta = (2 * Math.PI * index) / count;
-    points.push(pointOnBoundary(radius, amplitude, waves, theta, offset));
+    points.push(
+      pointOnBoundary(radius, amplitude, waves, shape, theta, offset),
+    );
   }
 
   return points;
@@ -166,6 +209,22 @@ function formatValue(value, fractionDigits) {
   return Number(value.toFixed(fractionDigits)).toString();
 }
 
+function shapeLabel(shape) {
+  if (shape <= 0.01) {
+    return "Circle";
+  }
+  if (Math.abs(shape - 1) <= 0.01) {
+    return "Square";
+  }
+  if (shape >= 1.99) {
+    return "Cross";
+  }
+  if (shape < 1) {
+    return "Circle → square · " + Math.round(shape * 100) + "%";
+  }
+  return "Square → cross · " + Math.round((shape - 1) * 100) + "%";
+}
+
 function activePresetName() {
   const matchesBlueGreen =
     state.innerColour === PRESETS.blueGreen.innerColour &&
@@ -186,6 +245,7 @@ function activePresetName() {
 function syncControlsFromState() {
   elements.radius.value = String(state.radius);
   elements.fieldWidth.value = String(state.fieldWidth);
+  elements.shape.value = String(state.shape);
   elements.ribbonWidth.value = String(state.ribbonWidth);
   elements.amplitude.value = String(state.amplitude);
   elements.waves.value = String(state.waves);
@@ -200,6 +260,7 @@ function syncControlsFromState() {
 
   elements.radiusValue.value = formatValue(state.radius, 0);
   elements.fieldWidthValue.value = formatValue(state.fieldWidth, 0);
+  elements.shapeValue.value = shapeLabel(state.shape);
   elements.ribbonWidthValue.value = formatValue(state.ribbonWidth, 0);
   elements.amplitudeValue.value = formatValue(state.amplitude, 0);
 
@@ -229,18 +290,21 @@ function render() {
     outerFieldRadius,
     state.amplitude,
     state.waves,
+    state.shape,
     0,
   );
   const outerInducingOuter = sampleBoundary(
     outerFieldRadius,
     state.amplitude,
     state.waves,
+    state.shape,
     w,
   );
   const outerBarrierOuter = sampleBoundary(
     outerFieldRadius,
     state.amplitude,
     state.waves,
+    state.shape,
     2 * w,
   );
 
@@ -248,18 +312,21 @@ function render() {
     innerFieldRadius,
     state.amplitude,
     state.waves,
+    state.shape,
     0,
   );
   const innerInducingInner = sampleBoundary(
     innerFieldRadius,
     state.amplitude,
     state.waves,
+    state.shape,
     -w,
   );
   const innerBarrierInner = sampleBoundary(
     innerFieldRadius,
     state.amplitude,
     state.waves,
+    state.shape,
     -2 * w,
   );
 
@@ -390,6 +457,8 @@ function exportMetadata() {
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
+    shapeMorph: state.shape,
+    shape: shapeLabel(state.shape),
     innerFieldRadius: state.radius - state.fieldWidth,
     ribbonWidth: state.ribbonWidth,
     amplitude: state.amplitude,
@@ -444,6 +513,8 @@ function exportFilename() {
     filenameNumber(state.radius) +
     "-F" +
     filenameNumber(state.fieldWidth) +
+    "-S" +
+    filenameNumber(state.shape) +
     "-w" +
     filenameNumber(state.ribbonWidth) +
     "-A" +
@@ -481,6 +552,7 @@ function downloadSvg() {
 
 bindRange(elements.radius, "radius");
 bindRange(elements.fieldWidth, "fieldWidth");
+bindRange(elements.shape, "shape");
 bindRange(elements.ribbonWidth, "ribbonWidth");
 bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
