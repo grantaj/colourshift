@@ -6,7 +6,8 @@ const CENTRE = VIEWBOX_SIZE / 2;
 const EDGE_MARGIN = 20;
 const CENTRE_MARGIN = 20;
 const MAX_EXTENT = CENTRE - EDGE_MARGIN;
-const CROSS_MIN_FACTOR = 0.62;
+const GREEK_CROSS_HALF_WIDTH = 0.42;
+const GREEK_CROSS_NORMALISER = Math.hypot(1, GREEK_CROSS_HALF_WIDTH);
 
 const LIMITS = Object.freeze({
   radius: [150, 240],
@@ -96,9 +97,10 @@ function clampState() {
     clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
   );
 
+  const minimumFactor = minimumShapeFactor(state.shape);
   const minimumInnerBaseRadius =
     (CENTRE_MARGIN + state.amplitude + 2 * state.ribbonWidth) /
-    CROSS_MIN_FACTOR;
+    minimumFactor;
   const minimumOuterRadius =
     LIMITS.fieldWidth[0] + minimumInnerBaseRadius;
   const maximumOuterRadius =
@@ -130,9 +132,23 @@ function squareRadiusFactor(theta) {
   return 1 / denominator;
 }
 
-function crossRadiusFactor(theta) {
-  const axial = Math.pow(Math.abs(Math.cos(2 * theta)), 4);
-  return CROSS_MIN_FACTOR + (1 - CROSS_MIN_FACTOR) * axial;
+function greekCrossRadiusFactor(theta) {
+  const c = Math.abs(Math.cos(theta));
+  const s = Math.abs(Math.sin(theta));
+  const halfLength = 1 / GREEK_CROSS_NORMALISER;
+  const halfWidth = GREEK_CROSS_HALF_WIDTH / GREEK_CROSS_NORMALISER;
+  const epsilon = 1e-12;
+
+  const horizontal = Math.min(
+    c > epsilon ? halfLength / c : Number.POSITIVE_INFINITY,
+    s > epsilon ? halfWidth / s : Number.POSITIVE_INFINITY,
+  );
+  const vertical = Math.min(
+    c > epsilon ? halfWidth / c : Number.POSITIVE_INFINITY,
+    s > epsilon ? halfLength / s : Number.POSITIVE_INFINITY,
+  );
+
+  return Math.max(horizontal, vertical);
 }
 
 function shapeRadiusFactor(theta, shape) {
@@ -143,16 +159,28 @@ function shapeRadiusFactor(theta, shape) {
     return 1 + t * (square - 1);
   }
 
-  const cross = crossRadiusFactor(theta);
+  const cross = greekCrossRadiusFactor(theta);
   const t = smoothstep01(shape - 1);
   return square + t * (cross - square);
+}
+
+function minimumShapeFactor(shape) {
+  let minimum = Number.POSITIVE_INFINITY;
+  const samples = 720;
+
+  for (let index = 0; index < samples; index += 1) {
+    const theta = (2 * Math.PI * index) / samples;
+    minimum = Math.min(minimum, shapeRadiusFactor(theta, shape));
+  }
+
+  return minimum;
 }
 
 function pointOnBoundary(radius, amplitude, waves, shape, theta, offset) {
   const shapedRadius = radius * shapeRadiusFactor(theta, shape);
   const r =
     shapedRadius +
-    amplitude * Math.sin(waves * theta) +
+    amplitude * Math.cos(waves * theta) +
     offset;
   return [
     CENTRE + r * Math.cos(theta),
@@ -161,7 +189,7 @@ function pointOnBoundary(radius, amplitude, waves, shape, theta, offset) {
 }
 
 function sampleBoundary(radius, amplitude, waves, shape, offset) {
-  const count = Math.max(720, 48 * waves);
+  const count = Math.max(1440, 96 * waves);
   const points = [];
 
   for (let index = 0; index < count; index += 1) {
@@ -217,7 +245,7 @@ function shapeLabel(shape) {
     return "Square";
   }
   if (shape >= 1.99) {
-    return "Cross";
+    return "Greek cross";
   }
   if (shape < 1) {
     return "Circle → square · " + Math.round(shape * 100) + "%";
