@@ -4,22 +4,36 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const VIEWBOX_SIZE = 760;
 const CENTRE = VIEWBOX_SIZE / 2;
 const EDGE_MARGIN = 20;
+const CENTRE_MARGIN = 20;
 const MAX_EXTENT = CENTRE - EDGE_MARGIN;
 
 const LIMITS = Object.freeze({
-  radius: [90, 240],
-  ribbonWidth: [2, 30],
-  amplitude: [0, 60],
+  radius: [150, 240],
+  fieldWidth: [50, 150],
+  ribbonWidth: [2, 20],
+  amplitude: [0, 45],
   waves: [2, 30],
 });
 
+const PRESETS = Object.freeze({
+  blueGreen: Object.freeze({
+    innerColour: "#6ec66a",
+    outerColour: "#3155a4",
+  }),
+  redYellow: Object.freeze({
+    innerColour: "#f0cf45",
+    outerColour: "#a93232",
+  }),
+});
+
 const DEFAULT_STATE = Object.freeze({
-  radius: 180,
-  ribbonWidth: 14,
-  amplitude: 18,
+  radius: 220,
+  fieldWidth: 110,
+  ribbonWidth: 8,
+  amplitude: 15,
   waves: 12,
-  innerColour: "#ffb800",
-  outerColour: "#525cd9",
+  innerColour: PRESETS.blueGreen.innerColour,
+  outerColour: PRESETS.blueGreen.outerColour,
 });
 
 const state = { ...DEFAULT_STATE };
@@ -28,13 +42,17 @@ const elements = {
   svg: document.getElementById("stimulus"),
   stage: document.getElementById("stage"),
   field: document.getElementById("field"),
-  innerRibbon: document.getElementById("inner-ribbon"),
-  outerRibbon: document.getElementById("outer-ribbon"),
+  outerBarrier: document.getElementById("outer-barrier"),
+  outerInducing: document.getElementById("outer-inducing"),
+  innerBarrier: document.getElementById("inner-barrier"),
+  innerInducing: document.getElementById("inner-inducing"),
   radius: document.getElementById("radius"),
+  fieldWidth: document.getElementById("field-width"),
   ribbonWidth: document.getElementById("ribbon-width"),
   amplitude: document.getElementById("amplitude"),
   waves: document.getElementById("waves"),
   radiusValue: document.getElementById("radius-value"),
+  fieldWidthValue: document.getElementById("field-width-value"),
   ribbonWidthValue: document.getElementById("ribbon-width-value"),
   amplitudeValue: document.getElementById("amplitude-value"),
   wavesValue: document.getElementById("waves-value"),
@@ -42,6 +60,8 @@ const elements = {
   outerColour: document.getElementById("outer-colour"),
   innerHex: document.getElementById("inner-hex"),
   outerHex: document.getElementById("outer-hex"),
+  presetBlueGreen: document.getElementById("preset-blue-green"),
+  presetRedYellow: document.getElementById("preset-red-yellow"),
   focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
@@ -66,12 +86,23 @@ function clampState() {
     clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
   );
 
-  const maximumRadiusForCurrentShape =
+  const maximumOuterRadius =
     MAX_EXTENT - state.amplitude - 2 * state.ribbonWidth;
   state.radius = clamp(
     Number(state.radius),
     LIMITS.radius[0],
-    Math.min(LIMITS.radius[1], maximumRadiusForCurrentShape),
+    Math.min(LIMITS.radius[1], maximumOuterRadius),
+  );
+
+  const maximumFieldWidth =
+    state.radius -
+    state.amplitude -
+    2 * state.ribbonWidth -
+    CENTRE_MARGIN;
+  state.fieldWidth = clamp(
+    Number(state.fieldWidth),
+    LIMITS.fieldWidth[0],
+    Math.min(LIMITS.fieldWidth[1], maximumFieldWidth),
   );
 }
 
@@ -130,8 +161,26 @@ function formatValue(value, fractionDigits) {
   return Number(value.toFixed(fractionDigits)).toString();
 }
 
+function activePresetName() {
+  const matchesBlueGreen =
+    state.innerColour === PRESETS.blueGreen.innerColour &&
+    state.outerColour === PRESETS.blueGreen.outerColour;
+  const matchesRedYellow =
+    state.innerColour === PRESETS.redYellow.innerColour &&
+    state.outerColour === PRESETS.redYellow.outerColour;
+
+  if (matchesBlueGreen) {
+    return "blueGreen";
+  }
+  if (matchesRedYellow) {
+    return "redYellow";
+  }
+  return null;
+}
+
 function syncControlsFromState() {
   elements.radius.value = String(state.radius);
+  elements.fieldWidth.value = String(state.fieldWidth);
   elements.ribbonWidth.value = String(state.ribbonWidth);
   elements.amplitude.value = String(state.amplitude);
   elements.waves.value = String(state.waves);
@@ -144,56 +193,100 @@ function syncControlsFromState() {
   elements.innerHex.setAttribute("aria-invalid", "false");
   elements.outerHex.setAttribute("aria-invalid", "false");
 
-  elements.radiusValue.value = formatValue(state.radius, 0) + " units";
-  elements.ribbonWidthValue.value =
-    formatValue(state.ribbonWidth, 0) + " units";
-  elements.amplitudeValue.value =
-    formatValue(state.amplitude, 0) + " units";
+  elements.radiusValue.value = formatValue(state.radius, 0);
+  elements.fieldWidthValue.value = formatValue(state.fieldWidth, 0);
+  elements.ribbonWidthValue.value = formatValue(state.ribbonWidth, 0);
+  elements.amplitudeValue.value = formatValue(state.amplitude, 0);
 
   const wavelength = (2 * Math.PI * state.radius) / state.waves;
   elements.wavesValue.value =
-    state.waves +
-    " waves · λ ≈ " +
-    formatValue(wavelength, 1) +
-    " units";
+    state.waves + " · λ ≈ " + formatValue(wavelength, 0);
+
+  const activePreset = activePresetName();
+  elements.presetBlueGreen.classList.toggle(
+    "active",
+    activePreset === "blueGreen",
+  );
+  elements.presetRedYellow.classList.toggle(
+    "active",
+    activePreset === "redYellow",
+  );
 }
 
 function render() {
   clampState();
 
-  const boundary0 = sampleBoundary(
-    state.radius,
+  const outerFieldRadius = state.radius;
+  const innerFieldRadius = state.radius - state.fieldWidth;
+  const w = state.ribbonWidth;
+
+  const outerField = sampleBoundary(
+    outerFieldRadius,
     state.amplitude,
     state.waves,
     0,
   );
-  const boundary1 = sampleBoundary(
-    state.radius,
+  const outerInducingOuter = sampleBoundary(
+    outerFieldRadius,
     state.amplitude,
     state.waves,
-    state.ribbonWidth,
+    w,
   );
-  const boundary2 = sampleBoundary(
-    state.radius,
+  const outerBarrierOuter = sampleBoundary(
+    outerFieldRadius,
     state.amplitude,
     state.waves,
-    2 * state.ribbonWidth,
+    2 * w,
   );
 
-  elements.outerRibbon.setAttribute(
+  const innerField = sampleBoundary(
+    innerFieldRadius,
+    state.amplitude,
+    state.waves,
+    0,
+  );
+  const innerInducingInner = sampleBoundary(
+    innerFieldRadius,
+    state.amplitude,
+    state.waves,
+    -w,
+  );
+  const innerBarrierInner = sampleBoundary(
+    innerFieldRadius,
+    state.amplitude,
+    state.waves,
+    -2 * w,
+  );
+
+  elements.field.setAttribute(
     "d",
-    ringPath(boundary1, boundary2),
+    ringPath(innerField, outerField),
   );
-  elements.outerRibbon.setAttribute("fill", state.outerColour);
-
-  elements.innerRibbon.setAttribute(
-    "d",
-    ringPath(boundary0, boundary1),
-  );
-  elements.innerRibbon.setAttribute("fill", state.innerColour);
-
-  elements.field.setAttribute("d", closedPath(boundary0));
   elements.field.setAttribute("fill", "#ffffff");
+
+  elements.outerInducing.setAttribute(
+    "d",
+    ringPath(outerField, outerInducingOuter),
+  );
+  elements.outerInducing.setAttribute("fill", state.innerColour);
+
+  elements.outerBarrier.setAttribute(
+    "d",
+    ringPath(outerInducingOuter, outerBarrierOuter),
+  );
+  elements.outerBarrier.setAttribute("fill", state.outerColour);
+
+  elements.innerInducing.setAttribute(
+    "d",
+    ringPath(innerInducingInner, innerField),
+  );
+  elements.innerInducing.setAttribute("fill", state.innerColour);
+
+  elements.innerBarrier.setAttribute(
+    "d",
+    ringPath(innerBarrierInner, innerInducingInner),
+  );
+  elements.innerBarrier.setAttribute("fill", state.outerColour);
 
   syncControlsFromState();
 }
@@ -216,8 +309,6 @@ function normaliseHex(value) {
 function bindColourPicker(picker, textInput, key) {
   picker.addEventListener("input", function () {
     state[key] = picker.value.toLowerCase();
-    textInput.value = state[key].toUpperCase();
-    textInput.setAttribute("aria-invalid", "false");
     render();
   });
 
@@ -243,15 +334,23 @@ function bindColourPicker(picker, textInput, key) {
   });
 }
 
+function applyPreset(preset) {
+  state.innerColour = preset.innerColour;
+  state.outerColour = preset.outerColour;
+  render();
+}
 
 async function enterFocusView() {
   document.body.classList.add("focus-mode");
 
-  if (document.fullscreenElement === null && document.documentElement.requestFullscreen) {
+  if (
+    document.fullscreenElement === null &&
+    document.documentElement.requestFullscreen
+  ) {
     try {
       await document.documentElement.requestFullscreen();
     } catch {
-      // Focus mode still works inside the browser viewport when fullscreen is unavailable.
+      // Focus mode still works inside the browser viewport.
     }
   }
 }
@@ -263,7 +362,7 @@ async function exitFocusView() {
     try {
       await document.exitFullscreen();
     } catch {
-      // The page UI has already been restored.
+      // Page UI is already restored.
     }
   }
 }
@@ -282,8 +381,11 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 1,
-    radius: state.radius,
+    version: 2,
+    topology: "annular-field-double-boundary",
+    outerFieldRadius: state.radius,
+    fieldWidth: state.fieldWidth,
+    innerFieldRadius: state.radius - state.fieldWidth,
     ribbonWidth: state.ribbonWidth,
     amplitude: state.amplitude,
     waves: state.waves,
@@ -333,8 +435,10 @@ function filenameNumber(value) {
 
 function exportFilename() {
   return (
-    "watercolour-R" +
+    "watercolour-annulus-R" +
     filenameNumber(state.radius) +
+    "-F" +
+    filenameNumber(state.fieldWidth) +
     "-w" +
     filenameNumber(state.ribbonWidth) +
     "-A" +
@@ -371,6 +475,7 @@ function downloadSvg() {
 }
 
 bindRange(elements.radius, "radius");
+bindRange(elements.fieldWidth, "fieldWidth");
 bindRange(elements.ribbonWidth, "ribbonWidth");
 bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
@@ -386,6 +491,13 @@ bindColourPicker(
   "outerColour",
 );
 
+elements.presetBlueGreen.addEventListener("click", function () {
+  applyPreset(PRESETS.blueGreen);
+});
+elements.presetRedYellow.addEventListener("click", function () {
+  applyPreset(PRESETS.redYellow);
+});
+
 elements.focusView.addEventListener("click", enterFocusView);
 elements.stage.addEventListener("click", function () {
   if (document.body.classList.contains("focus-mode")) {
@@ -394,7 +506,10 @@ elements.stage.addEventListener("click", function () {
 });
 document.addEventListener("fullscreenchange", syncFocusMode);
 document.addEventListener("keydown", function (event) {
-  if (event.key === "Escape" && document.body.classList.contains("focus-mode")) {
+  if (
+    event.key === "Escape" &&
+    document.body.classList.contains("focus-mode")
+  ) {
     exitFocusView();
   }
 });
