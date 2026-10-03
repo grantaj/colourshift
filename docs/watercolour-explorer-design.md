@@ -109,15 +109,15 @@ This radial-offset construction is the stimulus convention for the explorer. Do 
 Suggested defaults:
 
     R                  = 180 SVG units
-    ribbon width       = 10 SVG units
+    ribbon width       = 14 SVG units
     amplitude          = 18 SVG units
-    waves around shape = 10
-    inner colour       = #ff8a16
-    outer colour       = #4f2a78
+    waves around shape = 12
+    inner colour       = #ffb800
+    outer colour       = #525cd9
     field              = #ffffff
     background         = #ffffff
 
-The defaults may be adjusted by eye during implementation, but should begin with an obvious classic orange/purple WCE-like stimulus.
+The defaults use the representative orange/yellow-inner, blue/purple-outer Figure 3 A-I colour pair already used in the repository reproduction. The 12-wave equal-width geometry is chosen to sit in the strong calibrated regime while retaining a visibly wavy contour.
 
 Add a Reset button that restores the canonical state.
 
