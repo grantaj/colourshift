@@ -60,6 +60,12 @@ Use explicit filled SVG paths rather than SVG strokes.
 Geometry:
 
 - Scale
+- Shape
+  - one continuous slider;
+  - 0 = circle;
+  - 1 = square;
+  - 2 = rounded cross;
+  - intermediate values smoothly interpolate between those shapes.
 - Field width
 - Ribbon width
 - Amplitude
@@ -96,6 +102,10 @@ Use the blue/green annular example:
     outer colour       = #3155A4
 
 The default should show an obvious annular white band between an inner and outer double contour.
+
+Default shape morph = 0 (circle).
+
+The shape control must morph both annular boundaries coherently. Use a normalized radial shape factor so the inner and outer boundaries remain nested through the full circle → square → cross transition. The square stage uses the exact radial distance to an axis-aligned square with fixed circumradius. The cross stage is a smooth fourfold radial form with axial arms and recessed diagonals.
 
 Reset restores this state.
 
@@ -172,6 +182,7 @@ Requirements:
 - deterministic output;
 - metadata containing:
   - topology;
+  - shape morph value and human-readable shape position;
   - outer field radius;
   - field width;
   - derived inner field radius;
