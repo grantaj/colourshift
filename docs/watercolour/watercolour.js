@@ -176,26 +176,91 @@ function minimumShapeFactor(shape) {
   return minimum;
 }
 
-function pointOnBoundary(radius, amplitude, waves, shape, theta, offset) {
+function basePoint(shape, theta) {
+  const factor = shapeRadiusFactor(theta, shape);
+  return [
+    factor * Math.cos(theta),
+    factor * Math.sin(theta),
+  ];
+}
+
+function buildArcLengthMap(shape, count) {
+  const basePoints = [];
+  for (let index = 0; index < count; index += 1) {
+    const theta = (2 * Math.PI * index) / count;
+    basePoints.push(basePoint(shape, theta));
+  }
+
+  const cumulative = new Array(count).fill(0);
+  let total = 0;
+
+  for (let index = 1; index < count; index += 1) {
+    const previous = basePoints[index - 1];
+    const current = basePoints[index];
+    total += Math.hypot(
+      current[0] - previous[0],
+      current[1] - previous[1],
+    );
+    cumulative[index] = total;
+  }
+
+  const last = basePoints[count - 1];
+  const first = basePoints[0];
+  total += Math.hypot(first[0] - last[0], first[1] - last[1]);
+
+  return {
+    fractions: cumulative.map(function (distance) {
+      return distance / total;
+    }),
+    perimeterFactor: total,
+  };
+}
+
+function pointOnBoundary(
+  radius,
+  amplitude,
+  waves,
+  shape,
+  theta,
+  offset,
+  arcFraction,
+) {
   const shapedRadius = radius * shapeRadiusFactor(theta, shape);
+  const wavePhase = 2 * Math.PI * waves * arcFraction;
   const r =
     shapedRadius +
-    amplitude * Math.cos(waves * theta) +
+    amplitude * Math.cos(wavePhase) +
     offset;
+
   return [
     CENTRE + r * Math.cos(theta),
     CENTRE + r * Math.sin(theta),
   ];
 }
 
-function sampleBoundary(radius, amplitude, waves, shape, offset) {
-  const count = Math.max(1440, 96 * waves);
+function sampleBoundary(
+  radius,
+  amplitude,
+  waves,
+  shape,
+  offset,
+  arcFractions,
+) {
+  const count = arcFractions.length;
   const points = [];
 
   for (let index = 0; index < count; index += 1) {
     const theta = (2 * Math.PI * index) / count;
     points.push(
-      pointOnBoundary(radius, amplitude, waves, shape, theta, offset),
+      pointOnBoundary(
+        radius,
+        amplitude,
+        waves,
+        shape,
+        theta,
+        offset,
+        arcFractions[index],
+      ),
     );
   }
 
@@ -292,7 +357,10 @@ function syncControlsFromState() {
   elements.ribbonWidthValue.value = formatValue(state.ribbonWidth, 0);
   elements.amplitudeValue.value = formatValue(state.amplitude, 0);
 
-  const wavelength = (2 * Math.PI * state.radius) / state.waves;
+  const count = Math.max(1440, 96 * state.waves);
+  const arcMap = buildArcLengthMap(state.shape, count);
+  const perimeter = arcMap.perimeterFactor * state.radius;
+  const wavelength = perimeter / state.waves;
   elements.wavesValue.value =
     state.waves + " · λ ≈ " + formatValue(wavelength, 0);
 
@@ -313,6 +381,9 @@ function render() {
   const outerFieldRadius = state.radius;
   const innerFieldRadius = state.radius - state.fieldWidth;
   const w = state.ribbonWidth;
+  const count = Math.max(1440, 96 * state.waves);
+  const arcMap = buildArcLengthMap(state.shape, count);
+  const arcFractions = arcMap.fractions;
 
   const outerField = sampleBoundary(
     outerFieldRadius,
@@ -320,6 +391,7 @@ function render() {
     state.waves,
     state.shape,
     0,
+    arcFractions,
   );
   const outerInducingOuter = sampleBoundary(
     outerFieldRadius,
@@ -327,6 +399,7 @@ function render() {
     state.waves,
     state.shape,
     w,
+    arcFractions,
   );
   const outerBarrierOuter = sampleBoundary(
     outerFieldRadius,
@@ -334,6 +407,7 @@ function render() {
     state.waves,
     state.shape,
     2 * w,
+    arcFractions,
   );
 
   const innerField = sampleBoundary(
@@ -342,6 +416,7 @@ function render() {
     state.waves,
     state.shape,
     0,
+    arcFractions,
   );
   const innerInducingInner = sampleBoundary(
     innerFieldRadius,
@@ -349,6 +424,7 @@ function render() {
     state.waves,
     state.shape,
     -w,
+    arcFractions,
   );
   const innerBarrierInner = sampleBoundary(
     innerFieldRadius,
@@ -356,6 +432,7 @@ function render() {
     state.waves,
     state.shape,
     -2 * w,
+    arcFractions,
   );
 
   elements.field.setAttribute(
