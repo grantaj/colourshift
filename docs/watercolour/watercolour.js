@@ -1,20 +1,29 @@
 "use strict";
 
+import {
+  DEFAULT_MITER_LIMIT,
+  buildArcLengthMap,
+  clamp,
+  minimumShapeFactor,
+  offsetClosedPolyline,
+  ringPath,
+  sampleBoundary,
+  translatePoints,
+} from "./geometry.mjs";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 const VIEWBOX_SIZE = 760;
 const CENTRE = VIEWBOX_SIZE / 2;
 const EDGE_MARGIN = 20;
 const CENTRE_MARGIN = 20;
 const MAX_EXTENT = CENTRE - EDGE_MARGIN;
-const GREEK_CROSS_HALF_WIDTH = 0.42;
-const GREEK_CROSS_NORMALISER = Math.hypot(1, GREEK_CROSS_HALF_WIDTH);
 
 const LIMITS = Object.freeze({
   radius: [150, 240],
   fieldWidth: [50, 150],
   shape: [0, 2],
-  ribbonWidth: [2, 20],
-  amplitude: [0, 45],
+  ribbonWidth: [2, 12],
+  amplitude: [0, 35],
   waves: [2, 30],
 });
 
@@ -30,8 +39,6 @@ const PRESETS = Object.freeze({
   modelOptimum: Object.freeze({
     innerColour: "#0000ff",
     outerColour: "#ffff00",
-    chromaticShiftUv: 0.040245208466,
-    relativeLuminanceShift: -0.134531096825,
   }),
 });
 
@@ -75,15 +82,10 @@ const elements = {
   presetBlueGreen: document.getElementById("preset-blue-green"),
   presetRedYellow: document.getElementById("preset-red-yellow"),
   presetModelOptimum: document.getElementById("preset-model-optimum"),
-  modelOptimumResult: document.getElementById("model-optimum-result"),
   focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
 };
-
-function clamp(value, minimum, maximum) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 function clampState() {
   state.shape = clamp(
@@ -106,203 +108,47 @@ function clampState() {
   );
 
   const minimumFactor = minimumShapeFactor(state.shape);
-  const minimumInnerBaseRadius =
-    (CENTRE_MARGIN + state.amplitude + 2 * state.ribbonWidth) /
-    minimumFactor;
+  const innerClearance =
+    CENTRE_MARGIN +
+    state.amplitude +
+    2 * state.ribbonWidth * DEFAULT_MITER_LIMIT;
+  const minimumInnerBaseRadius = innerClearance / minimumFactor;
+
   const minimumOuterRadius =
     LIMITS.fieldWidth[0] + minimumInnerBaseRadius;
   const maximumOuterRadius =
-    MAX_EXTENT - state.amplitude - 2 * state.ribbonWidth;
+    MAX_EXTENT -
+    state.amplitude -
+    2 * state.ribbonWidth * DEFAULT_MITER_LIMIT;
+
+  const radiusMinimum = Math.max(LIMITS.radius[0], minimumOuterRadius);
+  const radiusMaximum = Math.min(LIMITS.radius[1], maximumOuterRadius);
+
+  if (radiusMinimum > radiusMaximum) {
+    throw new RangeError("Explorer geometry limits are infeasible");
+  }
+
   state.radius = clamp(
     Number(state.radius),
-    Math.max(LIMITS.radius[0], minimumOuterRadius),
-    Math.min(LIMITS.radius[1], maximumOuterRadius),
+    radiusMinimum,
+    radiusMaximum,
   );
 
   const maximumFieldWidth =
     state.radius - minimumInnerBaseRadius;
+  const fieldWidthMaximum = Math.min(
+    LIMITS.fieldWidth[1],
+    maximumFieldWidth,
+  );
+
+  if (fieldWidthMaximum < LIMITS.fieldWidth[0]) {
+    throw new RangeError("Explorer field-width limits are infeasible");
+  }
+
   state.fieldWidth = clamp(
     Number(state.fieldWidth),
     LIMITS.fieldWidth[0],
-    Math.min(LIMITS.fieldWidth[1], maximumFieldWidth),
-  );
-}
-
-function smoothstep01(value) {
-  const t = clamp(value, 0, 1);
-  return t * t * (3 - 2 * t);
-}
-
-function squareRadiusFactor(theta) {
-  const denominator =
-    Math.SQRT2 *
-    Math.max(Math.abs(Math.cos(theta)), Math.abs(Math.sin(theta)));
-  return 1 / denominator;
-}
-
-function greekCrossRadiusFactor(theta) {
-  const c = Math.abs(Math.cos(theta));
-  const s = Math.abs(Math.sin(theta));
-  const halfLength = 1 / GREEK_CROSS_NORMALISER;
-  const halfWidth = GREEK_CROSS_HALF_WIDTH / GREEK_CROSS_NORMALISER;
-  const epsilon = 1e-12;
-
-  const horizontal = Math.min(
-    c > epsilon ? halfLength / c : Number.POSITIVE_INFINITY,
-    s > epsilon ? halfWidth / s : Number.POSITIVE_INFINITY,
-  );
-  const vertical = Math.min(
-    c > epsilon ? halfWidth / c : Number.POSITIVE_INFINITY,
-    s > epsilon ? halfLength / s : Number.POSITIVE_INFINITY,
-  );
-
-  return Math.max(horizontal, vertical);
-}
-
-function shapeRadiusFactor(theta, shape) {
-  const square = squareRadiusFactor(theta);
-
-  if (shape <= 1) {
-    const t = smoothstep01(shape);
-    return 1 + t * (square - 1);
-  }
-
-  const cross = greekCrossRadiusFactor(theta);
-  const t = smoothstep01(shape - 1);
-  return square + t * (cross - square);
-}
-
-function minimumShapeFactor(shape) {
-  let minimum = Number.POSITIVE_INFINITY;
-  const samples = 720;
-
-  for (let index = 0; index < samples; index += 1) {
-    const theta = (2 * Math.PI * index) / samples;
-    minimum = Math.min(minimum, shapeRadiusFactor(theta, shape));
-  }
-
-  return minimum;
-}
-
-function basePoint(shape, theta) {
-  const factor = shapeRadiusFactor(theta, shape);
-  return [
-    factor * Math.cos(theta),
-    factor * Math.sin(theta),
-  ];
-}
-
-function buildArcLengthMap(shape, count) {
-  const basePoints = [];
-  for (let index = 0; index < count; index += 1) {
-    const theta = (2 * Math.PI * index) / count;
-    basePoints.push(basePoint(shape, theta));
-  }
-
-  const cumulative = new Array(count).fill(0);
-  let total = 0;
-
-  for (let index = 1; index < count; index += 1) {
-    const previous = basePoints[index - 1];
-    const current = basePoints[index];
-    total += Math.hypot(
-      current[0] - previous[0],
-      current[1] - previous[1],
-    );
-    cumulative[index] = total;
-  }
-
-  const last = basePoints[count - 1];
-  const first = basePoints[0];
-  total += Math.hypot(first[0] - last[0], first[1] - last[1]);
-
-  return {
-    fractions: cumulative.map(function (distance) {
-      return distance / total;
-    }),
-    perimeterFactor: total,
-  };
-}
-
-function pointOnBoundary(
-  radius,
-  amplitude,
-  waves,
-  shape,
-  theta,
-  offset,
-  arcFraction,
-) {
-  const shapedRadius = radius * shapeRadiusFactor(theta, shape);
-  const wavePhase = 2 * Math.PI * waves * arcFraction;
-  const r =
-    shapedRadius +
-    amplitude * Math.cos(wavePhase) +
-    offset;
-
-  return [
-    CENTRE + r * Math.cos(theta),
-    CENTRE + r * Math.sin(theta),
-  ];
-}
-
-function sampleBoundary(
-  radius,
-  amplitude,
-  waves,
-  shape,
-  offset,
-  arcFractions,
-) {
-  const count = arcFractions.length;
-  const points = [];
-
-  for (let index = 0; index < count; index += 1) {
-    const theta = (2 * Math.PI * index) / count;
-    points.push(
-      pointOnBoundary(
-        radius,
-        amplitude,
-        waves,
-        shape,
-        theta,
-        offset,
-        arcFractions[index],
-      ),
-    );
-  }
-
-  return points;
-}
-
-function formatCoordinate(value) {
-  return Number(value.toFixed(3)).toString();
-}
-
-function closedPath(points) {
-  if (points.length === 0) {
-    return "";
-  }
-
-  const commands = points.map(function (point, index) {
-    const prefix = index === 0 ? "M" : "L";
-    return (
-      prefix +
-      " " +
-      formatCoordinate(point[0]) +
-      " " +
-      formatCoordinate(point[1])
-    );
-  });
-
-  return commands.join(" ") + " Z";
-}
-
-function ringPath(innerPoints, outerPoints) {
-  return (
-    closedPath(outerPoints) +
-    " " +
-    closedPath(innerPoints.slice().reverse())
+    fieldWidthMaximum,
   );
 }
 
@@ -391,7 +237,6 @@ function syncControlsFromState() {
     "active",
     activePreset === "modelOptimum",
   );
-  elements.modelOptimumResult.hidden = activePreset !== "modelOptimum";
 }
 
 function render() {
@@ -404,54 +249,59 @@ function render() {
   const arcMap = buildArcLengthMap(state.shape, count);
   const arcFractions = arcMap.fractions;
 
-  const outerField = sampleBoundary(
+  const outerFieldLocal = sampleBoundary(
     outerFieldRadius,
     state.amplitude,
     state.waves,
     state.shape,
-    0,
     arcFractions,
   );
-  const outerInducingOuter = sampleBoundary(
-    outerFieldRadius,
+  const innerFieldLocal = sampleBoundary(
+    innerFieldRadius,
     state.amplitude,
     state.waves,
     state.shape,
-    w,
-    arcFractions,
-  );
-  const outerBarrierOuter = sampleBoundary(
-    outerFieldRadius,
-    state.amplitude,
-    state.waves,
-    state.shape,
-    2 * w,
     arcFractions,
   );
 
-  const innerField = sampleBoundary(
-    innerFieldRadius,
-    state.amplitude,
-    state.waves,
-    state.shape,
-    0,
-    arcFractions,
+  const outerInducingLocal = offsetClosedPolyline(
+    outerFieldLocal,
+    w,
   );
-  const innerInducingInner = sampleBoundary(
-    innerFieldRadius,
-    state.amplitude,
-    state.waves,
-    state.shape,
+  const outerBarrierLocal = offsetClosedPolyline(
+    outerFieldLocal,
+    2 * w,
+  );
+  const innerInducingLocal = offsetClosedPolyline(
+    innerFieldLocal,
     -w,
-    arcFractions,
   );
-  const innerBarrierInner = sampleBoundary(
-    innerFieldRadius,
-    state.amplitude,
-    state.waves,
-    state.shape,
+  const innerBarrierLocal = offsetClosedPolyline(
+    innerFieldLocal,
     -2 * w,
-    arcFractions,
+  );
+
+  const outerField = translatePoints(outerFieldLocal, CENTRE, CENTRE);
+  const innerField = translatePoints(innerFieldLocal, CENTRE, CENTRE);
+  const outerInducing = translatePoints(
+    outerInducingLocal,
+    CENTRE,
+    CENTRE,
+  );
+  const outerBarrier = translatePoints(
+    outerBarrierLocal,
+    CENTRE,
+    CENTRE,
+  );
+  const innerInducing = translatePoints(
+    innerInducingLocal,
+    CENTRE,
+    CENTRE,
+  );
+  const innerBarrier = translatePoints(
+    innerBarrierLocal,
+    CENTRE,
+    CENTRE,
   );
 
   elements.field.setAttribute(
@@ -462,25 +312,25 @@ function render() {
 
   elements.outerInducing.setAttribute(
     "d",
-    ringPath(outerField, outerInducingOuter),
+    ringPath(outerField, outerInducing),
   );
   elements.outerInducing.setAttribute("fill", state.innerColour);
 
   elements.outerBarrier.setAttribute(
     "d",
-    ringPath(outerInducingOuter, outerBarrierOuter),
+    ringPath(outerInducing, outerBarrier),
   );
   elements.outerBarrier.setAttribute("fill", state.outerColour);
 
   elements.innerInducing.setAttribute(
     "d",
-    ringPath(innerInducingInner, innerField),
+    ringPath(innerInducing, innerField),
   );
   elements.innerInducing.setAttribute("fill", state.innerColour);
 
   elements.innerBarrier.setAttribute(
     "d",
-    ringPath(innerBarrierInner, innerInducingInner),
+    ringPath(innerBarrier, innerInducing),
   );
   elements.innerBarrier.setAttribute("fill", state.outerColour);
 
