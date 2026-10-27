@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -106,4 +107,16 @@ test("SVG path helpers produce two closed subpaths for a ribbon", () => {
   assert.equal((path.match(/ Z/g) ?? []).length, 2);
   assert.ok(!path.includes("NaN"));
   assert.ok(!path.includes("Infinity"));
+});
+
+
+test("explorer does not display canonical-model prediction scores", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(!html.includes("Δu"));
+  assert.ok(!html.includes("ΔY"));
+  assert.match(html, /type="module" src="watercolour\.js"/);
 });
