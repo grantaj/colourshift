@@ -176,14 +176,6 @@ input[type="range"] {
   grid-column: 1 / -1;
 }
 
-.model-result {
-  margin: -0.45rem 0 1rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
 .colour-inputs {
   display: grid;
   grid-template-columns: 54px 1fr;
