@@ -69,7 +69,7 @@
               <label for="ribbon-width">Ribbon width</label>
               <output id="ribbon-width-value" for="ribbon-width"></output>
             </div>
-            <input id="ribbon-width" type="range" min="2" max="20" step="1" value="8" />
+            <input id="ribbon-width" type="range" min="2" max="12" step="1" value="8" />
           </div>
 
           <div class="control">
@@ -77,7 +77,7 @@
               <label for="amplitude">Amplitude</label>
               <output id="amplitude-value" for="amplitude"></output>
             </div>
-            <input id="amplitude" type="range" min="0" max="45" step="1" value="15" />
+            <input id="amplitude" type="range" min="0" max="35" step="1" value="15" />
           </div>
 
           <div class="control">
@@ -108,9 +108,6 @@
               Model optimum
             </button>
           </div>
-          <p id="model-optimum-result" class="model-result" hidden>
-            Canonical model Δu′v′ 0.04025 · ΔY −0.135
-          </p>
 
           <div class="colour-control">
             <label for="inner-colour">Inner</label>
@@ -170,6 +167,6 @@
     </aside>
   </main>
 
-  <script src="watercolour.js"></script>
+  <script type="module" src="watercolour.js"></script>
 </body>
 </html>
