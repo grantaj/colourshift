@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watercolour Explorer</title>
+  <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
+  <link rel="stylesheet" href="watercolour.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>Watercolour Explorer</h1>
+  </header>
+
+  <main class="explorer-shell">
+    <section class="preview-panel" aria-label="Stimulus preview">
+      <div id="stage" class="stage">
+        <svg
+          id="stimulus"
+          viewBox="0 0 760 760"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-labelledby="stimulus-title"
+        >
+          <title id="stimulus-title">Interactive annular watercolour-effect double-contour stimulus</title>
+          <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+          <path id="field" fill="#ffffff" fill-rule="evenodd"></path>
+          <path id="outer-barrier" fill="#3155a4" fill-rule="evenodd"></path>
+          <path id="outer-inducing" fill="#6ec66a" fill-rule="evenodd"></path>
+          <path id="inner-barrier" fill="#3155a4" fill-rule="evenodd"></path>
+          <path id="inner-inducing" fill="#6ec66a" fill-rule="evenodd"></path>
+        </svg>
+      </div>
+    </section>
+
+    <aside class="controls-panel" aria-label="Explorer controls">
+      <form id="controls">
+        <fieldset>
+          <legend>Geometry</legend>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="radius">Scale</label>
+              <output id="radius-value" for="radius"></output>
+            </div>
+            <input id="radius" type="range" min="150" max="240" step="1" value="220" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading control-heading-stacked">
+              <label for="shape">Shape</label>
+              <output id="shape-value" for="shape"></output>
+            </div>
+            <input id="shape" type="range" min="0" max="2" step="0.01" value="0" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="field-width">Field width</label>
+              <output id="field-width-value" for="field-width"></output>
+            </div>
+            <input id="field-width" type="range" min="50" max="150" step="1" value="110" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="ribbon-width">Ribbon width</label>
+              <output id="ribbon-width-value" for="ribbon-width"></output>
+            </div>
+            <input id="ribbon-width" type="range" min="2" max="12" step="1" value="8" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading">
+              <label for="amplitude">Amplitude</label>
+              <output id="amplitude-value" for="amplitude"></output>
+            </div>
+            <input id="amplitude" type="range" min="0" max="35" step="1" value="15" />
+          </div>
+
+          <div class="control">
+            <div class="control-heading control-heading-stacked">
+              <label for="waves">Waves / wavelength</label>
+              <output id="waves-value" for="waves"></output>
+            </div>
+            <input id="waves" type="range" min="2" max="30" step="1" value="12" />
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Colours</legend>
+
+          <div class="presets" aria-label="Colour presets">
+            <button id="preset-blue-green" class="preset-button active" type="button">
+              Blue / green
+            </button>
+            <button id="preset-red-yellow" class="preset-button" type="button">
+              Red / yellow
+            </button>
+            <button
+              id="preset-model-optimum"
+              class="preset-button model-optimum"
+              type="button"
+              title="Python optimiser result for the white field"
+            >
+              Model optimum
+            </button>
+          </div>
+
+          <div class="colour-control">
+            <label for="inner-colour">Inner</label>
+            <div class="colour-inputs">
+              <input
+                id="inner-colour"
+                class="colour-picker"
+                type="color"
+                value="#6ec66a"
+                aria-label="Inner inducing contour colour"
+              />
+              <label class="visually-hidden" for="inner-hex">Inner inducing contour hexadecimal colour</label>
+              <input
+                id="inner-hex"
+                class="hex-input"
+                type="text"
+                value="#6EC66A"
+                maxlength="7"
+                spellcheck="false"
+                autocomplete="off"
+                aria-label="Inner inducing contour hexadecimal colour"
+              />
+            </div>
+          </div>
+
+          <div class="colour-control">
+            <label for="outer-colour">Outer</label>
+            <div class="colour-inputs">
+              <input
+                id="outer-colour"
+                class="colour-picker"
+                type="color"
+                value="#3155a4"
+                aria-label="Outer barrier contour colour"
+              />
+              <label class="visually-hidden" for="outer-hex">Outer barrier contour hexadecimal colour</label>
+              <input
+                id="outer-hex"
+                class="hex-input"
+                type="text"
+                value="#3155A4"
+                maxlength="7"
+                spellcheck="false"
+                autocomplete="off"
+                aria-label="Outer barrier contour hexadecimal colour"
+              />
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button id="focus-view" class="button secondary wide" type="button">Focus view</button>
+          <button id="reset" class="button secondary" type="button">Reset</button>
+          <button id="save-svg" class="button primary" type="button">Save SVG</button>
+        </div>
+      </form>
+    </aside>
+  </main>
+
+  <script type="module" src="watercolour.js"></script>
+</body>
+</html>
