@@ -172,10 +172,6 @@ input[type="range"] {
   border-color: var(--accent);
 }
 
-.preset-button.model-optimum {
-  grid-column: 1 / -1;
-}
-
 .colour-inputs {
   display: grid;
   grid-template-columns: 54px 1fr;

@@ -36,10 +36,6 @@ const PRESETS = Object.freeze({
     innerColour: "#f0cf45",
     outerColour: "#a93232",
   }),
-  modelOptimum: Object.freeze({
-    innerColour: "#0000ff",
-    outerColour: "#ffff00",
-  }),
 });
 
 const DEFAULT_STATE = Object.freeze({
@@ -81,7 +77,6 @@ const elements = {
   outerHex: document.getElementById("outer-hex"),
   presetBlueGreen: document.getElementById("preset-blue-green"),
   presetRedYellow: document.getElementById("preset-red-yellow"),
-  presetModelOptimum: document.getElementById("preset-model-optimum"),
   focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
@@ -179,18 +174,11 @@ function activePresetName() {
   const matchesRedYellow =
     state.innerColour === PRESETS.redYellow.innerColour &&
     state.outerColour === PRESETS.redYellow.outerColour;
-  const matchesModelOptimum =
-    state.innerColour === PRESETS.modelOptimum.innerColour &&
-    state.outerColour === PRESETS.modelOptimum.outerColour;
-
   if (matchesBlueGreen) {
     return "blueGreen";
   }
   if (matchesRedYellow) {
     return "redYellow";
-  }
-  if (matchesModelOptimum) {
-    return "modelOptimum";
   }
   return null;
 }
@@ -232,10 +220,6 @@ function syncControlsFromState() {
   elements.presetRedYellow.classList.toggle(
     "active",
     activePreset === "redYellow",
-  );
-  elements.presetModelOptimum.classList.toggle(
-    "active",
-    activePreset === "modelOptimum",
   );
 }
 
@@ -547,9 +531,6 @@ elements.presetBlueGreen.addEventListener("click", function () {
 });
 elements.presetRedYellow.addEventListener("click", function () {
   applyPreset(PRESETS.redYellow);
-});
-elements.presetModelOptimum.addEventListener("click", function () {
-  applyPreset(PRESETS.modelOptimum);
 });
 
 elements.focusView.addEventListener("click", enterFocusView);
