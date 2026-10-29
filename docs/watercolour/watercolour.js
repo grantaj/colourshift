@@ -36,9 +36,29 @@ const PRESETS = Object.freeze({
     innerColour: "#f0cf45",
     outerColour: "#a93232",
   }),
-  modelOptimum: Object.freeze({
+  blueYellow: Object.freeze({
     innerColour: "#0000ff",
     outerColour: "#ffff00",
+  }),
+  yellowBlue: Object.freeze({
+    innerColour: "#ffff00",
+    outerColour: "#0000ff",
+  }),
+  magentaGreen: Object.freeze({
+    innerColour: "#ff00ff",
+    outerColour: "#00ff00",
+  }),
+  greenMagenta: Object.freeze({
+    innerColour: "#00ff00",
+    outerColour: "#ff00ff",
+  }),
+  redCyan: Object.freeze({
+    innerColour: "#ff0000",
+    outerColour: "#00ffff",
+  }),
+  cyanRed: Object.freeze({
+    innerColour: "#00ffff",
+    outerColour: "#ff0000",
   }),
 });
 
@@ -81,7 +101,12 @@ const elements = {
   outerHex: document.getElementById("outer-hex"),
   presetBlueGreen: document.getElementById("preset-blue-green"),
   presetRedYellow: document.getElementById("preset-red-yellow"),
-  presetModelOptimum: document.getElementById("preset-model-optimum"),
+  presetBlueYellow: document.getElementById("preset-blue-yellow"),
+  presetYellowBlue: document.getElementById("preset-yellow-blue"),
+  presetMagentaGreen: document.getElementById("preset-magenta-green"),
+  presetGreenMagenta: document.getElementById("preset-green-magenta"),
+  presetRedCyan: document.getElementById("preset-red-cyan"),
+  presetCyanRed: document.getElementById("preset-cyan-red"),
   focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
@@ -173,24 +198,13 @@ function shapeLabel(shape) {
 }
 
 function activePresetName() {
-  const matchesBlueGreen =
-    state.innerColour === PRESETS.blueGreen.innerColour &&
-    state.outerColour === PRESETS.blueGreen.outerColour;
-  const matchesRedYellow =
-    state.innerColour === PRESETS.redYellow.innerColour &&
-    state.outerColour === PRESETS.redYellow.outerColour;
-  const matchesModelOptimum =
-    state.innerColour === PRESETS.modelOptimum.innerColour &&
-    state.outerColour === PRESETS.modelOptimum.outerColour;
-
-  if (matchesBlueGreen) {
-    return "blueGreen";
-  }
-  if (matchesRedYellow) {
-    return "redYellow";
-  }
-  if (matchesModelOptimum) {
-    return "modelOptimum";
+  for (const [name, preset] of Object.entries(PRESETS)) {
+    if (
+      state.innerColour === preset.innerColour &&
+      state.outerColour === preset.outerColour
+    ) {
+      return name;
+    }
   }
   return null;
 }
@@ -225,18 +239,18 @@ function syncControlsFromState() {
     state.waves + " · λ ≈ " + formatValue(wavelength, 0);
 
   const activePreset = activePresetName();
-  elements.presetBlueGreen.classList.toggle(
-    "active",
-    activePreset === "blueGreen",
-  );
-  elements.presetRedYellow.classList.toggle(
-    "active",
-    activePreset === "redYellow",
-  );
-  elements.presetModelOptimum.classList.toggle(
-    "active",
-    activePreset === "modelOptimum",
-  );
+  for (const [name, element] of [
+    ["blueGreen", elements.presetBlueGreen],
+    ["redYellow", elements.presetRedYellow],
+    ["blueYellow", elements.presetBlueYellow],
+    ["yellowBlue", elements.presetYellowBlue],
+    ["magentaGreen", elements.presetMagentaGreen],
+    ["greenMagenta", elements.presetGreenMagenta],
+    ["redCyan", elements.presetRedCyan],
+    ["cyanRed", elements.presetCyanRed],
+  ]) {
+    element.classList.toggle("active", activePreset === name);
+  }
 }
 
 function render() {
@@ -548,8 +562,23 @@ elements.presetBlueGreen.addEventListener("click", function () {
 elements.presetRedYellow.addEventListener("click", function () {
   applyPreset(PRESETS.redYellow);
 });
-elements.presetModelOptimum.addEventListener("click", function () {
-  applyPreset(PRESETS.modelOptimum);
+elements.presetBlueYellow.addEventListener("click", function () {
+  applyPreset(PRESETS.blueYellow);
+});
+elements.presetYellowBlue.addEventListener("click", function () {
+  applyPreset(PRESETS.yellowBlue);
+});
+elements.presetMagentaGreen.addEventListener("click", function () {
+  applyPreset(PRESETS.magentaGreen);
+});
+elements.presetGreenMagenta.addEventListener("click", function () {
+  applyPreset(PRESETS.greenMagenta);
+});
+elements.presetRedCyan.addEventListener("click", function () {
+  applyPreset(PRESETS.redCyan);
+});
+elements.presetCyanRed.addEventListener("click", function () {
+  applyPreset(PRESETS.cyanRed);
 });
 
 elements.focusView.addEventListener("click", enterFocusView);
