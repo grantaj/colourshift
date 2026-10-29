@@ -118,7 +118,7 @@ test("explorer does not display canonical-model prediction scores", async () => 
 
   assert.ok(!html.includes("Δu"));
   assert.ok(!html.includes("ΔY"));
-  assert.match(html, /type="module" src="watercolour\.js\?v=3"/);
+  assert.match(html, /type="module" src="watercolour\.js\?v=4"/);
 });
 
 
