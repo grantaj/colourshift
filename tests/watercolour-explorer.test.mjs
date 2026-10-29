@@ -220,7 +220,7 @@ test("explorer pages version mutable CSS and JavaScript assets", async () => {
   assert.match(indexHtml, /href="watercolour\.css\?v=2"/);
   assert.match(indexHtml, /src="watercolour\.js\?v=4"/);
   assert.match(compareHtml, /href="watercolour\.css\?v=2"/);
-  assert.match(compareHtml, /src="compare\.js\?v=1"/);
+  assert.match(compareHtml, /src="compare\.js\?v=2"/);
 });
 
 
