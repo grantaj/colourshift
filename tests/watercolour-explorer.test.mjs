@@ -171,7 +171,7 @@ test("pairwise test page reuses explorer geometry and records eight presets", as
   );
 
   assert.match(html, /Which white annulus shows the stronger apparent colour shift/);
-  assert.match(html, /compare\.js\?v=1/);
+  assert.match(html, /compare\.js\?v=2/);
   assert.match(js, /new URLSearchParams\(window\.location\.search\)/);
   assert.match(js, /buildArcLengthMap/);
   assert.match(js, /offsetClosedPolyline/);
@@ -220,5 +220,20 @@ test("explorer pages version mutable CSS and JavaScript assets", async () => {
   assert.match(indexHtml, /href="watercolour\.css\?v=2"/);
   assert.match(indexHtml, /src="watercolour\.js\?v=4"/);
   assert.match(compareHtml, /href="watercolour\.css\?v=2"/);
-  assert.match(compareHtml, /src="compare\.js\?v=1"/);
+  assert.match(compareHtml, /src="compare\.js\?v=2"/);
+});
+
+
+test("pairwise test locks input after a choice and completion", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/compare.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /let acceptingChoice = true/);
+  assert.match(js, /let completed = false/);
+  assert.match(js, /if \(!acceptingChoice \|\| completed\)/);
+  assert.match(js, /completed = true/);
+  assert.match(js, /elements\.choiceA\.disabled = true/);
+  assert.match(js, /elements\.choiceB\.disabled = true/);
 });

@@ -124,6 +124,8 @@ let currentRound = buildRound(shuffled(PRESETS));
 let matchIndex = 0;
 let winners = [];
 let currentMatch = null;
+let acceptingChoice = true;
+let completed = false;
 const history = [];
 
 function totalMatchesRemaining() {
@@ -158,6 +160,10 @@ function geometrySummary() {
 }
 
 function finish() {
+  completed = true;
+  acceptingChoice = false;
+  elements.choiceA.disabled = true;
+  elements.choiceB.disabled = true;
   const champion = winners[0];
   const lines = [
     "Watercolour pairwise test",
@@ -184,6 +190,13 @@ function finish() {
 }
 
 function choose(winner) {
+  if (!acceptingChoice || completed) {
+    return;
+  }
+  acceptingChoice = false;
+  elements.choiceA.disabled = true;
+  elements.choiceB.disabled = true;
+
   const [left, right] = currentMatch;
   history.push({ left, right, winner });
   winners.push(winner);
@@ -191,6 +204,9 @@ function choose(winner) {
 
   if (matchIndex < currentRound.length) {
     showCurrentMatch();
+    elements.choiceA.disabled = false;
+    elements.choiceB.disabled = false;
+    acceptingChoice = true;
     return;
   }
 
@@ -204,6 +220,9 @@ function choose(winner) {
   matchIndex = 0;
   roundNumber += 1;
   showCurrentMatch();
+  elements.choiceA.disabled = false;
+  elements.choiceB.disabled = false;
+  acceptingChoice = true;
 }
 
 elements.choiceA.addEventListener("click", function () {
