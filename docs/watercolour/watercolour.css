@@ -433,14 +433,23 @@ body.focus-mode #stimulus {
   }
 
   .comparison-match {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.35rem;
   }
 
   .comparison-choice {
-    max-height: 46vh;
+    width: 100%;
+    min-width: 0;
   }
 
   .comparison-choice svg {
-    height: 46vh;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .choice-label {
+    bottom: 0.35rem;
+    font-size: 0.95rem;
   }
 }
