@@ -61,6 +61,14 @@ def _uv_distance(a: RGB, b: RGB) -> float:
     return float(np.linalg.norm(_uv(a) - _uv(b)))
 
 
+def _prediction_in_unit_gamut(rgb: np.ndarray, tolerance: float = 1.0e-9) -> bool:
+    return bool(
+        np.all(np.isfinite(rgb))
+        and np.all(rgb >= -tolerance)
+        and np.all(rgb <= 1.0 + tolerance)
+    )
+
+
 def _prediction_row(inner: RGB, outer: RGB) -> dict[str, object]:
     prediction = predict_watercolour(
         field_rgb=FIELD,
@@ -79,7 +87,7 @@ def _prediction_row(inner: RGB, outer: RGB) -> dict[str, object]:
         "transfer_efficiency": efficiency,
         "relative_luminance_shift": prediction.relative_luminance_shift,
         "predicted_rgb_unclipped": list(prediction.predicted_rgb_unclipped),
-        "predicted_rgb_in_unit_gamut": is_unit_gamut(predicted_rgb),
+        "predicted_rgb_in_unit_gamut": _prediction_in_unit_gamut(predicted_rgb),
         "inner_chroma_uv": inner_chroma,
         "contour_separation_uv": _uv_distance(inner, outer),
     }
