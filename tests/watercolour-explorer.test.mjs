@@ -158,3 +158,50 @@ test("explorer exposes empirical high-contrast presets without an optimum claim"
   assert.ok(!html.includes("Model optimum"));
   assert.ok(!js.includes("modelOptimum"));
 });
+
+
+test("pairwise test page reuses explorer geometry and records eight presets", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/compare.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/compare.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /Which white annulus shows the stronger apparent colour shift/);
+  assert.match(html, /compare\.js\?v=1/);
+  assert.match(js, /new URLSearchParams\(window\.location\.search\)/);
+  assert.match(js, /buildArcLengthMap/);
+  assert.match(js, /offsetClosedPolyline/);
+  assert.match(js, /ringPath/);
+  assert.equal((js.match(/\{ name:/g) ?? []).length, 8);
+  assert.match(js, /Winner:/);
+  assert.match(js, /Choices:/);
+});
+
+test("explorer offers pairwise test using current geometry", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(html.includes('id="pairwise-test"'));
+  assert.match(js, /function openPairwiseTest\(\)/);
+  for (const key of [
+    "radius",
+    "fieldWidth",
+    "shape",
+    "ribbonWidth",
+    "amplitude",
+    "waves",
+  ]) {
+    assert.ok(js.includes(key));
+  }
+  assert.match(js, /compare\.html\?/);
+});
