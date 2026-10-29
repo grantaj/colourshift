@@ -63,9 +63,7 @@ def _uv_distance(a: RGB, b: RGB) -> float:
 
 def _prediction_in_unit_gamut(rgb: np.ndarray, tolerance: float = 1.0e-9) -> bool:
     return bool(
-        np.all(np.isfinite(rgb))
-        and np.all(rgb >= -tolerance)
-        and np.all(rgb <= 1.0 + tolerance)
+        np.all(np.isfinite(rgb)) and np.all(rgb >= -tolerance) and np.all(rgb <= 1.0 + tolerance)
     )
 
 
