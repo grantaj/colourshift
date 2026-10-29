@@ -120,3 +120,41 @@ test("explorer does not display canonical-model prediction scores", async () => 
   assert.ok(!html.includes("ΔY"));
   assert.match(html, /type="module" src="watercolour\.js"/);
 });
+
+
+test("explorer exposes empirical high-contrast presets without an optimum claim", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  for (const id of [
+    "preset-blue-yellow",
+    "preset-yellow-blue",
+    "preset-magenta-green",
+    "preset-green-magenta",
+    "preset-red-cyan",
+    "preset-cyan-red",
+  ]) {
+    assert.ok(html.includes(`id="${id}"`));
+  }
+
+  for (const pair of [
+    ['innerColour: "#0000ff"', 'outerColour: "#ffff00"'],
+    ['innerColour: "#ffff00"', 'outerColour: "#0000ff"'],
+    ['innerColour: "#ff00ff"', 'outerColour: "#00ff00"'],
+    ['innerColour: "#00ff00"', 'outerColour: "#ff00ff"'],
+    ['innerColour: "#ff0000"', 'outerColour: "#00ffff"'],
+    ['innerColour: "#00ffff"', 'outerColour: "#ff0000"'],
+  ]) {
+    assert.ok(js.includes(pair[0]));
+    assert.ok(js.includes(pair[1]));
+  }
+
+  assert.ok(!html.includes("Model optimum"));
+  assert.ok(!js.includes("modelOptimum"));
+});

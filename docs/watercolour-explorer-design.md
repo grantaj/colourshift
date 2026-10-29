@@ -91,6 +91,34 @@ Colour presets:
 
 These are representative display colours for the remembered strong examples, not claimed source-measured RGB values.
 
+Additional high-contrast visual-test presets:
+
+3. Blue / yellow
+   - inner/inducing: `#0000FF`
+   - outer/barrier: `#FFFF00`
+
+4. Yellow / blue
+   - inner/inducing: `#FFFF00`
+   - outer/barrier: `#0000FF`
+
+5. Magenta / green
+   - inner/inducing: `#FF00FF`
+   - outer/barrier: `#00FF00`
+
+6. Green / magenta
+   - inner/inducing: `#00FF00`
+   - outer/barrier: `#FF00FF`
+
+7. Red / cyan
+   - inner/inducing: `#FF0000`
+   - outer/barrier: `#00FFFF`
+
+8. Cyan / red
+   - inner/inducing: `#00FFFF`
+   - outer/barrier: `#FF0000`
+
+These six presets are empirical viewing probes only. They are deliberately high-contrast sRGB pairs and are not labelled or implied to be optimiser results or perceptual optima.
+
 ## Default state
 
 Use the blue/green annular example:
