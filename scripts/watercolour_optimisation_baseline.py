@@ -302,7 +302,7 @@ def control_conditions() -> list[dict[str, object]]:
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     if not rows:
         return
-    fieldnames = list(rows[0])
+    fieldnames = list(dict.fromkeys(key for row in rows for key in row))
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
