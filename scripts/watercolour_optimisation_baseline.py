@@ -70,9 +70,7 @@ def _prediction_row(inner: RGB, outer: RGB) -> dict[str, object]:
     predicted_rgb = np.asarray(prediction.predicted_rgb_unclipped, dtype=float)
     inner_chroma = _uv_distance(inner, FIELD)
     efficiency = (
-        prediction.chromatic_shift_uv / inner_chroma
-        if inner_chroma > np.finfo(float).eps
-        else None
+        prediction.chromatic_shift_uv / inner_chroma if inner_chroma > np.finfo(float).eps else None
     )
     return {
         "inner_rgb": list(inner),
@@ -102,12 +100,7 @@ def published_condition_baseline() -> dict[str, object]:
             "pearson_correlation": float(np.corrcoef(predicted, observed)[0, 1]),
             "mean_absolute_shift_ratio_error": float(np.mean(np.abs(predicted - observed))),
             "mean_absolute_angle_error_deg": float(
-                np.mean(
-                    [
-                        abs(item.angle_difference_error_deg)
-                        for item in measurements
-                    ]
-                )
+                np.mean([abs(item.angle_difference_error_deg) for item in measurements])
             ),
         },
     }
@@ -332,31 +325,25 @@ def _write_line_plot(path: Path, rows: list[dict[str, object]]) -> None:
     plot_height = height - top - bottom
 
     modes = ["rgb_to_corner", "fixed_luminance_chroma"]
-    grouped = {
-        mode: [row for row in rows if row["mode"] == mode]
-        for mode in modes
-    }
+    grouped = {mode: [row for row in rows if row["mode"] == mode] for mode in modes}
     maximum = max(float(row["chromatic_shift_uv"]) for row in rows)
     maximum = maximum if maximum > 0 else 1.0
 
     lines = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}">',
         '<rect width="100%" height="100%" fill="white"/>',
+        (f'<line x1="{left}" y1="{top}" x2="{left}" y2="{height - bottom}" stroke="black"/>'),
         (
-            f'<line x1="{left}" y1="{top}" x2="{left}" y2="{height-bottom}" '
-            'stroke="black"/>'
+            f'<line x1="{left}" y1="{height - bottom}" x2="{width - right}" '
+            f'y2="{height - bottom}" stroke="black"/>'
         ),
         (
-            f'<line x1="{left}" y1="{height-bottom}" x2="{width-right}" '
-            f'y2="{height-bottom}" stroke="black"/>'
-        ),
-        (
-            f'<text x="{width/2}" y="{height-20}" text-anchor="middle" '
+            f'<text x="{width / 2}" y="{height - 20}" text-anchor="middle" '
             'font-family="sans-serif" font-size="16">contrast / chroma fraction</text>'
         ),
         (
-            f'<text x="20" y="{height/2}" transform="rotate(-90 20 '
-            f'{height/2})" text-anchor="middle" font-family="sans-serif" '
+            f'<text x="20" y="{height / 2}" transform="rotate(-90 20 '
+            f'{height / 2})" text-anchor="middle" font-family="sans-serif" '
             'font-size="16">predicted Δu′v′</text>'
         ),
     ]
@@ -382,11 +369,11 @@ def _write_line_plot(path: Path, rows: list[dict[str, object]]) -> None:
         )
         legend_y = top + 22 + 24 * mode_index
         lines.append(
-            f'<line x1="{left+15}" y1="{legend_y}" x2="{left+45}" '
+            f'<line x1="{left + 15}" y1="{legend_y}" x2="{left + 45}" '
             f'y2="{legend_y}" stroke="{colours[mode]}" stroke-width="3"/>'
         )
         lines.append(
-            f'<text x="{left+55}" y="{legend_y+5}" font-family="sans-serif" '
+            f'<text x="{left + 55}" y="{legend_y + 5}" font-family="sans-serif" '
             f'font-size="14">{labels[mode]}</text>'
         )
 
@@ -395,12 +382,12 @@ def _write_line_plot(path: Path, rows: list[dict[str, object]]) -> None:
         x = left + fraction * plot_width
         y = top + (1.0 - fraction) * plot_height
         lines.append(
-            f'<text x="{x}" y="{height-bottom+24}" text-anchor="middle" '
+            f'<text x="{x}" y="{height - bottom + 24}" text-anchor="middle" '
             f'font-family="sans-serif" font-size="12">{fraction:.1f}</text>'
         )
         lines.append(
-            f'<text x="{left-10}" y="{y+4}" text-anchor="end" '
-            f'font-family="sans-serif" font-size="12">{maximum*fraction:.3f}</text>'
+            f'<text x="{left - 10}" y="{y + 4}" text-anchor="end" '
+            f'font-family="sans-serif" font-size="12">{maximum * fraction:.3f}</text>'
         )
 
     lines.append("</svg>")
@@ -425,12 +412,12 @@ def _write_hue_map_svg(path: Path, result: dict[str, object]) -> None:
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}">',
         '<rect width="100%" height="100%" fill="white"/>',
         (
-            f'<text x="{size/2}" y="{size-18}" text-anchor="middle" '
+            f'<text x="{size / 2}" y="{size - 18}" text-anchor="middle" '
             'font-family="sans-serif" font-size="16">outer contour hue (degrees)</text>'
         ),
         (
-            f'<text x="20" y="{size/2}" transform="rotate(-90 20 '
-            f'{size/2})" text-anchor="middle" font-family="sans-serif" '
+            f'<text x="20" y="{size / 2}" transform="rotate(-90 20 '
+            f'{size / 2})" text-anchor="middle" font-family="sans-serif" '
             'font-size="16">inner contour hue (degrees)</text>'
         ),
     ]
@@ -444,19 +431,19 @@ def _write_hue_map_svg(path: Path, result: dict[str, object]) -> None:
             x = margin + outer_index * cell
             y = margin + inner_index * cell
             lines.append(
-                f'<rect x="{x:.3f}" y="{y:.3f}" width="{cell+0.3:.3f}" '
-                f'height="{cell+0.3:.3f}" fill="hsl(220 70% {lightness:.2f}%)"/>'
+                f'<rect x="{x:.3f}" y="{y:.3f}" width="{cell + 0.3:.3f}" '
+                f'height="{cell + 0.3:.3f}" fill="hsl(220 70% {lightness:.2f}%)"/>'
             )
 
     for degrees in (0, 90, 180, 270, 360):
         fraction = degrees / 360.0
         position = margin + fraction * plot
         lines.append(
-            f'<text x="{position:.2f}" y="{size-margin+24}" text-anchor="middle" '
+            f'<text x="{position:.2f}" y="{size - margin + 24}" text-anchor="middle" '
             f'font-family="sans-serif" font-size="12">{degrees}</text>'
         )
         lines.append(
-            f'<text x="{margin-10}" y="{position+4:.2f}" text-anchor="end" '
+            f'<text x="{margin - 10}" y="{position + 4:.2f}" text-anchor="end" '
             f'font-family="sans-serif" font-size="12">{degrees}</text>'
         )
 
@@ -504,10 +491,7 @@ def _print_summary(report_path: Path) -> None:
     published = report["published_conditions"]["summary"]
     hues = report["fixed_luminance_fixed_chroma_hue_map"]["summary"]
     print(f"Wrote {report_path}")
-    print(
-        "Published-condition rank correlation: "
-        f"{published['spearman_rank_correlation']:.3f}"
-    )
+    print(f"Published-condition rank correlation: {published['spearman_rank_correlation']:.3f}")
     print(
         "Fixed-luminance/fixed-chroma hue-map range: "
         f"{hues['minimum_shift_uv']:.6f} .. {hues['maximum_shift_uv']:.6f}"
