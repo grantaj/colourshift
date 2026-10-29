@@ -107,6 +107,7 @@ const elements = {
   presetGreenMagenta: document.getElementById("preset-green-magenta"),
   presetRedCyan: document.getElementById("preset-red-cyan"),
   presetCyanRed: document.getElementById("preset-cyan-red"),
+  pairwiseTest: document.getElementById("pairwise-test"),
   focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
@@ -438,6 +439,19 @@ function resetExplorer() {
   render();
 }
 
+function openPairwiseTest() {
+  clampState();
+  const params = new URLSearchParams({
+    radius: String(state.radius),
+    fieldWidth: String(state.fieldWidth),
+    shape: String(state.shape),
+    ribbonWidth: String(state.ribbonWidth),
+    amplitude: String(state.amplitude),
+    waves: String(state.waves),
+  });
+  window.location.href = "compare.html?" + params.toString();
+}
+
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
@@ -581,6 +595,7 @@ elements.presetCyanRed.addEventListener("click", function () {
   applyPreset(PRESETS.cyanRed);
 });
 
+elements.pairwiseTest.addEventListener("click", openPairwiseTest);
 elements.focusView.addEventListener("click", enterFocusView);
 elements.stage.addEventListener("click", function () {
   if (document.body.classList.contains("focus-mode")) {

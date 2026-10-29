@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watercolour Pairwise Test</title>
+  <meta
+    name="description"
+    content="Pairwise visual comparison of Watercolour Effect colour presets."
+  />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
+  <link rel="stylesheet" href="watercolour.css" />
+</head>
+<body class="comparison-page">
+  <header class="site-header comparison-header">
+    <div>
+      <h1>Pairwise colour test</h1>
+      <p id="progress" class="comparison-progress"></p>
+    </div>
+    <a class="button secondary comparison-back" href="index.html">Back to explorer</a>
+  </header>
+
+  <main class="comparison-shell">
+    <p class="comparison-instruction">
+      Which white annulus shows the stronger apparent colour shift?
+    </p>
+
+    <section id="match" class="comparison-match" aria-live="polite">
+      <button id="choice-a" class="comparison-choice" type="button">
+        <svg id="stimulus-a" viewBox="0 0 760 760" preserveAspectRatio="xMidYMid meet"
+          role="img" aria-label="Choice A Watercolour Effect stimulus">
+          <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+          <path class="field" fill="#ffffff" fill-rule="evenodd"></path>
+          <path class="outer-barrier" fill-rule="evenodd"></path>
+          <path class="outer-inducing" fill-rule="evenodd"></path>
+          <path class="inner-barrier" fill-rule="evenodd"></path>
+          <path class="inner-inducing" fill-rule="evenodd"></path>
+        </svg>
+        <span class="choice-label">A</span>
+      </button>
+
+      <button id="choice-b" class="comparison-choice" type="button">
+        <svg id="stimulus-b" viewBox="0 0 760 760" preserveAspectRatio="xMidYMid meet"
+          role="img" aria-label="Choice B Watercolour Effect stimulus">
+          <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+          <path class="field" fill="#ffffff" fill-rule="evenodd"></path>
+          <path class="outer-barrier" fill-rule="evenodd"></path>
+          <path class="outer-inducing" fill-rule="evenodd"></path>
+          <path class="inner-barrier" fill-rule="evenodd"></path>
+          <path class="inner-inducing" fill-rule="evenodd"></path>
+        </svg>
+        <span class="choice-label">B</span>
+      </button>
+    </section>
+
+    <section id="results" class="comparison-results" hidden>
+      <h2>Results</h2>
+      <p>Copy this block back into the chat.</p>
+      <textarea id="results-text" rows="16" readonly></textarea>
+      <div class="comparison-result-actions">
+        <button id="copy-results" class="button primary" type="button">Copy results</button>
+        <button id="restart-test" class="button secondary" type="button">Run again</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="compare.js?v=1"></script>
+</body>
+</html>

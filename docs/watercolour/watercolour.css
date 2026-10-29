@@ -319,3 +319,128 @@ body.focus-mode #stimulus {
     padding: 0.95rem;
   }
 }
+
+
+.comparison-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.comparison-progress {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.comparison-back {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.comparison-shell {
+  width: min(96vw, 1500px);
+  margin: 0 auto;
+  padding: 0.75rem 0 2rem;
+}
+
+.comparison-instruction {
+  margin: 0 0 0.9rem;
+  text-align: center;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 650;
+}
+
+.comparison-match {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.comparison-choice {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.comparison-choice:hover,
+.comparison-choice:focus-visible {
+  border-color: var(--accent);
+}
+
+.comparison-choice svg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.choice-label {
+  position: absolute;
+  left: 50%;
+  bottom: 0.8rem;
+  transform: translateX(-50%);
+  min-width: 2.2rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.comparison-results {
+  width: min(760px, 100%);
+  margin: 2rem auto 0;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.comparison-results h2 {
+  margin-top: 0;
+}
+
+.comparison-results textarea {
+  width: 100%;
+  min-height: 18rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--control);
+  color: var(--ink);
+  font: 0.9rem/1.45 ui-monospace, "SFMono-Regular", Consolas, monospace;
+  resize: vertical;
+}
+
+.comparison-result-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .comparison-header {
+    align-items: flex-start;
+  }
+
+  .comparison-match {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-choice {
+    max-height: 46vh;
+  }
+
+  .comparison-choice svg {
+    height: 46vh;
+  }
+}
