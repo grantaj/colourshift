@@ -205,3 +205,20 @@ test("explorer offers pairwise test using current geometry", async () => {
   }
   assert.match(js, /compare\.html\?/);
 });
+
+
+test("explorer pages version mutable CSS and JavaScript assets", async () => {
+  const indexHtml = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const compareHtml = await readFile(
+    new URL("../docs/watercolour/compare.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(indexHtml, /href="watercolour\.css\?v=2"/);
+  assert.match(indexHtml, /src="watercolour\.js\?v=4"/);
+  assert.match(compareHtml, /href="watercolour\.css\?v=2"/);
+  assert.match(compareHtml, /src="compare\.js\?v=1"/);
+});
