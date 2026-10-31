@@ -79,6 +79,10 @@ tests for those functions are not independent validation.
 
 ## Development
 
+See [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) for the outstanding
+ColourShift reference-implementation cleanup and the proposed client-side
+GitHub Pages exhibition app.
+
 ```bash
 uv sync
 uv run ruff check .
