@@ -1,7 +1,7 @@
 # ColourShift
 
 ColourShift explores colour appearance and contextual colour effects. The main
-Tk application uses CIECAM02/CAM02-UCS to search for surround/base colour
+Tk application uses the Zhu–Luo CAM16 simultaneous-contrast model to search for surround/base colour
 combinations that produce large predicted perceptual shifts.
 
 The repository also contains an experimental Watercolour Effect (WCE) forward
@@ -30,19 +30,35 @@ The main actions are:
 The `Min result separation` slider controls how different returned candidate
 appearances must be from each other.
 
-The corrected CIECAM02 adaptation proxy is the default engine. The deprecated
-historical proxy remains selectable for reproducing existing paper results,
-and both can be shown side by side in all three search modes. The corrected
-engine maps the configured adapting luminance to CIECAM02 `L_A` and the
-background luminous factor to `Y_b` using explicit keyword arguments.
+ColourShift has one supported model: `zhu-luo-cam16cc-2019-v1`, shown as
+**Zhu–Luo CAM16 simultaneous contrast (2019)**. Target and background colours
+are converted independently under a fixed D65 CAM16 adapting white. The model
+then applies Zhu and Luo's fitted lightness and hue-contrast corrections.
+The app defaults to the chromatic objective because the total objective is
+normally dominated by the model's intentionally strong lightness correction.
 
-Results can be ranked by total CAM02-UCS appearance shift or by chromatic
+Results can be ranked by total CAM16-UCS appearance shift or by chromatic
 displacement alone. In chromatic mode, the minimum result-separation filter
 also operates only in the chromatic `a′b′` plane, avoiding candidates that
 differ mostly in lightness. Both scores are shown beneath each candidate.
-These two engines still use the coloured surround as a reference-white
-adaptation proxy; the corrected engine fixes parameter mapping but is not yet
-a dedicated simultaneous-contrast model.
+The 2019 model does not include an independent chroma-contrast term. See the
+[numerical contract](docs/colourshift-numerical-contract.md) for the precise
+mapping, search semantics, and portable reference fixture.
+
+The same searches are available from the command line:
+
+```bash
+uv run colourshift-export \
+  --mode maximal-surround-shift \
+  --base '#950000' \
+  --surround '#964301' \
+  --objective total \
+  --output result.json
+```
+
+JSON results use the versioned `colourshift-search-result-v1` schema and
+include the model, complete configuration, input snapshot, and both total and
+chromatic scores for every candidate.
 
 ## Watercolour Effect model
 

@@ -1,144 +1,62 @@
 import json
 
 from colourshift.core.algorithms import (
-    ENGINE_CORRECTED,
-    ENGINE_LABELS,
+    MODE_MAXIMAL_SURROUND_SHIFT,
+    MODEL_ID,
     OBJECTIVE_CHROMATIC,
-    ColourShiftResult,
-    EngineSearchResults,
+    ColourShiftCandidate,
+    SearchResult,
 )
 from colourshift.core.config import Config
 from colourshift.io import (
-    build_engine_comparison_payload,
-    build_solution_payload,
+    build_search_result_payload,
     create_comparison_image,
-    save_solution_json,
+    save_search_result_json,
 )
 
 
-def test_build_solution_payload_serialises_candidates():
-    payload = build_solution_payload(
-        "#950000",
-        "#964301",
-        [ColourShiftResult(rgb=[1.0, 0.0, 0.5], delta_e=12.34)],
+def example_result():
+    return SearchResult(
+        MODEL_ID,
+        MODE_MAXIMAL_SURROUND_SHIFT,
+        OBJECTIVE_CHROMATIC,
+        Config(rgb_grid_points=2, min_delta=5, max_candidates=1),
+        (149 / 255, 0.0, 0.0),
+        (150 / 255, 67 / 255, 1 / 255),
+        (ColourShiftCandidate((1.0, 0.0, 0.5), 12.34, 10.5),),
     )
 
-    assert payload == {
-        "base_color": {
-            "hex": "#950000",
-            "rgb": [149 / 255, 0.0, 0.0],
-        },
-        "surround_color": {
-            "hex": "#964301",
-            "rgb": [150 / 255, 67 / 255, 1 / 255],
-        },
-        "candidates": [
-            {
-                "hex": "#ff007f",
-                "rgb": [1.0, 0.0, 0.5],
-                "deltaE": 12.34,
-            },
-        ],
-        "search": {},
-    }
 
-
-def test_build_solution_payload_includes_search_metadata():
-    payload = build_solution_payload(
-        "#950000",
-        "#964301",
-        [ColourShiftResult(rgb=[1.0, 0.0, 0.5], delta_e=12.34)],
-        mode="maximal-surround-shift",
-        config=Config(rgb_grid_points=2, min_delta=5.0, max_candidates=1),
-    )
-
-    assert payload["search"] == {
-        "mode": "maximal-surround-shift",
-        "config": {
-            "viewing_condition": "Average",
-            "background_luminance": 20.0,
-            "adapting_luminance": 64.0,
-            "rgb_grid_points": 2,
-            "min_delta": 5.0,
-            "max_candidates": 1,
-        },
-    }
-
-
-def test_save_solution_json_writes_payload(tmp_path):
-    path = tmp_path / "nested" / "solution.json"
-
-    save_solution_json(
-        path,
-        "#000000",
-        "#ffffff",
-        [ColourShiftResult(rgb=[0.0, 1.0, 0.0], delta_e=3)],
-    )
-
-    assert json.loads(path.read_text(encoding="utf-8"))["candidates"] == [
+def test_search_payload_is_complete_and_versioned():
+    payload = build_search_result_payload(example_result())
+    assert payload["schema"] == "colourshift-search-result-v1"
+    assert payload["model"] == MODEL_ID
+    assert payload["mode"] == MODE_MAXIMAL_SURROUND_SHIFT
+    assert payload["objective"] == OBJECTIVE_CHROMATIC
+    assert payload["config"]["background_luminous_factor"] == 20.0
+    assert payload["inputs"]["base"]["hex"] == "#950000"
+    assert payload["inputs"]["surround"]["hex"] == "#964301"
+    assert payload["candidates"] == [
         {
-            "hex": "#00ff00",
-            "rgb": [0.0, 1.0, 0.0],
-            "deltaE": 3.0,
+            "hex": "#ff007f",
+            "rgb": [1.0, 0.0, 0.5],
+            "total_shift": 12.34,
+            "chromatic_shift": 10.5,
         }
     ]
 
 
-def test_build_engine_comparison_payload_preserves_model_and_objective():
-    groups = [
-        EngineSearchResults(
-            engine=ENGINE_CORRECTED,
-            engine_label=ENGINE_LABELS[ENGINE_CORRECTED],
-            objective=OBJECTIVE_CHROMATIC,
-            candidates=[
-                ColourShiftResult(
-                    rgb=[0.0, 1.0, 0.0],
-                    delta_e=7.5,
-                    chromatic_delta=6.25,
-                )
-            ],
-        )
-    ]
-
-    payload = build_engine_comparison_payload(
-        "#950000",
-        "#964301",
-        groups,
-        mode="sensitive-bases",
-    )
-
-    assert payload["search"] == {
-        "mode": "sensitive-bases",
-        "engines": [ENGINE_CORRECTED],
-        "objective": OBJECTIVE_CHROMATIC,
-    }
-    assert payload["results"] == [
-        {
-            "engine": ENGINE_CORRECTED,
-            "engine_label": ENGINE_LABELS[ENGINE_CORRECTED],
-            "objective": OBJECTIVE_CHROMATIC,
-            "candidates": [
-                {
-                    "hex": "#00ff00",
-                    "rgb": [0.0, 1.0, 0.0],
-                    "total_shift": 7.5,
-                    "chromatic_shift": 6.25,
-                }
-            ],
-        }
-    ]
+def test_save_search_result_json_creates_parent_and_trailing_newline(tmp_path):
+    path = tmp_path / "nested" / "result.json"
+    save_search_result_json(path, example_result())
+    assert json.loads(path.read_text())["model"] == MODEL_ID
+    assert path.read_text().endswith("\n")
 
 
 def test_create_comparison_image_draws_expected_regions():
     image = create_comparison_image(
-        "#ff0000",
-        "#00ff00",
-        "#ff00ff",
-        "#0000ff",
-        size=(100, 50),
-        box_size=5,
+        "#ff0000", "#00ff00", "#ff00ff", "#0000ff", size=(100, 50), box_size=5
     )
-
     assert image.size == (100, 50)
     assert image.getpixel((10, 10)) == (0, 255, 0)
     assert image.getpixel((75, 10)) == (0, 0, 255)

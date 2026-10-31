@@ -4,136 +4,47 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
+from colourshift.core.algorithms import SearchResult
+from colourshift.core.colour_models import rgb_to_hex
 
 NEUTRAL_GREY_HEX = "#808080"
 
 
-def build_solution_payload(
-    base_hex,
-    surround_hex,
-    candidates,
-    mode=None,
-    config=None,
-    engine=None,
-    objective=None,
-):
-    search = {}
-    if mode is not None:
-        search["mode"] = mode
-    if config is not None:
-        search["config"] = asdict(config)
-    if engine is not None:
-        search["engine"] = engine
-    if objective is not None:
-        search["objective"] = objective
+def _colour_payload(rgb):
+    if rgb is None:
+        return None
+    return {"hex": rgb_to_hex(rgb), "rgb": list(rgb)}
 
+
+def build_search_result_payload(result: SearchResult):
+    """Serialise the stable, versioned search-result contract."""
     return {
-        "base_color": {
-            "hex": base_hex,
-            "rgb": hex_to_rgb(base_hex),
-        },
-        "surround_color": {
-            "hex": surround_hex,
-            "rgb": hex_to_rgb(surround_hex),
+        "schema": "colourshift-search-result-v1",
+        "model": result.model,
+        "mode": result.mode,
+        "objective": result.objective,
+        "config": asdict(result.config),
+        "inputs": {
+            "base": _colour_payload(result.base_rgb),
+            "surround": _colour_payload(result.surround_rgb),
         },
         "candidates": [
             {
                 "hex": rgb_to_hex(candidate.rgb),
                 "rgb": list(candidate.rgb),
-                "deltaE": float(candidate.delta_e),
+                "total_shift": float(candidate.total_shift),
+                "chromatic_shift": float(candidate.chromatic_shift),
             }
-            for candidate in candidates
-        ],
-        "search": search,
-    }
-
-
-def save_solution_json(
-    path,
-    base_hex,
-    surround_hex,
-    candidates,
-    mode=None,
-    config=None,
-    engine=None,
-    objective=None,
-):
-    payload = build_solution_payload(
-        base_hex,
-        surround_hex,
-        candidates,
-        mode=mode,
-        config=config,
-        engine=engine,
-        objective=objective,
-    )
-    output_path = Path(path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
-
-
-def build_engine_comparison_payload(
-    base_hex,
-    surround_hex,
-    result_groups,
-    mode="maximal-surround-shift",
-):
-    """Serialise side-by-side appearance-engine search results."""
-    return {
-        "base_color": {
-            "hex": base_hex,
-            "rgb": hex_to_rgb(base_hex),
-        },
-        "surround_color": {
-            "hex": surround_hex,
-            "rgb": hex_to_rgb(surround_hex),
-        },
-        "search": {
-            "mode": mode,
-            "engines": [group.engine for group in result_groups],
-            "objective": result_groups[0].objective if result_groups else None,
-        },
-        "results": [
-            {
-                "engine": group.engine,
-                "engine_label": group.engine_label,
-                "objective": group.objective,
-                "candidates": [
-                    {
-                        "hex": rgb_to_hex(candidate.rgb),
-                        "rgb": list(candidate.rgb),
-                        "total_shift": float(candidate.delta_e),
-                        "chromatic_shift": (
-                            None
-                            if candidate.chromatic_delta is None
-                            else float(candidate.chromatic_delta)
-                        ),
-                    }
-                    for candidate in group.candidates
-                ],
-            }
-            for group in result_groups
+            for candidate in result.candidates
         ],
     }
 
 
-def save_engine_comparison_json(
-    path,
-    base_hex,
-    surround_hex,
-    result_groups,
-    mode="maximal-surround-shift",
-):
-    payload = build_engine_comparison_payload(
-        base_hex,
-        surround_hex,
-        result_groups,
-        mode=mode,
-    )
+def save_search_result_json(path, result: SearchResult):
+    payload = build_search_result_payload(result)
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def create_comparison_image(

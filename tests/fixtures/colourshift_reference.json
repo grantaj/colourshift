@@ -1,0 +1,62 @@
+{
+  "model": "zhu-luo-cam16cc-2019-v1",
+  "doi": "10.2352/ISSN.2169-2629.2019.27.34",
+  "config": {
+    "viewing_condition": "Average",
+    "background_luminous_factor": 20.0,
+    "adapting_luminance": 23.0,
+    "rgb_grid_points": 3,
+    "min_delta": 0.5,
+    "max_candidates": 3
+  },
+  "conversions": {
+    "hex": "#804020",
+    "rgb": [0.5019607843137255, 0.25098039215686274, 0.12549019607843137],
+    "roundtrip_hex": "#804020",
+    "xyz": [0.10996194233062459, 0.08360270446096858, 0.024006300428470174]
+  },
+  "appearance": {
+    "target": [0.5843137254901961, 0.0, 0.0],
+    "background": [0.5882352941176471, 0.2627450980392157, 0.00392156862745098],
+    "ordinary_target_cam16_ucs": [34.66286989049978, 36.24145142667276, 18.723959575905084],
+    "corrected_coordinates": [38.68783386031066, 33.81491603361402, 22.816242402105615]
+  },
+  "searches": {
+    "maximal-surround-shift": {
+      "total": [
+        {"rgb": [1.0, 1.0, 1.0], "total_shift": 38.77459630669053, "chromatic_shift": 10.51906334004632},
+        {"rgb": [1.0, 1.0, 0.5], "total_shift": 35.16635482471565, "chromatic_shift": 2.2983576173451827},
+        {"rgb": [1.0, 1.0, 0.0], "total_shift": 34.54962927387445, "chromatic_shift": 3.3719965034052732}
+      ],
+      "chromatic": [
+        {"rgb": [1.0, 0.0, 0.5], "total_shift": 13.746256786409784, "chromatic_shift": 10.552297366587066},
+        {"rgb": [0.5, 0.5, 0.5], "total_shift": 11.708389721383819, "chromatic_shift": 10.019481996724586},
+        {"rgb": [0.5, 0.0, 0.5], "total_shift": 9.780152145229415, "chromatic_shift": 9.367140930198767}
+      ]
+    },
+    "strongest-surrounds": {
+      "total": [
+        {"rgb": [1.0, 1.0, 1.0], "total_shift": 40.436236303066956, "chromatic_shift": 5.783263281828579},
+        {"rgb": [1.0, 1.0, 0.5], "total_shift": 37.8712801466796, "chromatic_shift": 2.461275351539742},
+        {"rgb": [1.0, 1.0, 0.0], "total_shift": 37.11067134359018, "chromatic_shift": 1.3872864345243627}
+      ],
+      "chromatic": [
+        {"rgb": [1.0, 0.0, 0.5], "total_shift": 12.89594182472349, "chromatic_shift": 5.8166931382367455},
+        {"rgb": [1.0, 0.5, 0.0], "total_shift": 18.332431875722715, "chromatic_shift": 5.567924818622392},
+        {"rgb": [0.5, 0.5, 0.5], "total_shift": 10.22674428656243, "chromatic_shift": 5.2808356609919445}
+      ]
+    },
+    "sensitive-bases": {
+      "total": [
+        {"rgb": [0.0, 0.0, 0.0], "total_shift": 21.117014135090113, "chromatic_shift": 0.0},
+        {"rgb": [1.0, 1.0, 0.5], "total_shift": 11.849565997630014, "chromatic_shift": 5.262844350731693},
+        {"rgb": [1.0, 1.0, 1.0], "total_shift": 11.615570611872748, "chromatic_shift": 4.160238662626997}
+      ],
+      "chromatic": [
+        {"rgb": [1.0, 0.0, 0.5], "total_shift": 7.543832742349834, "chromatic_shift": 5.488273030640091},
+        {"rgb": [1.0, 0.5, 0.5], "total_shift": 9.131583042494105, "chromatic_shift": 5.332170315039861},
+        {"rgb": [0.5, 0.5, 0.0], "total_shift": 6.2519765165521894, "chromatic_shift": 5.271800726243728}
+      ]
+    }
+  }
+}
