@@ -3,11 +3,42 @@ from functools import partial
 from threading import Thread
 from tkinter import colorchooser, filedialog, ttk
 
-from colourshift.core.algorithms import compute_appearance_difference, find_extreme_shift_colors
+from colourshift.core.algorithms import (
+    ENGINE_CORRECTED,
+    ENGINE_LABELS,
+    ENGINE_LEGACY,
+    OBJECTIVE_CHROMATIC,
+    OBJECTIVE_TOTAL,
+    compare_appearance_engines,
+    find_extreme_shift_colors,
+)
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
-from colourshift.io import save_comparison_image, save_solution_json
+from colourshift.io import (
+    save_comparison_image,
+    save_engine_comparison_json,
+    save_solution_json,
+)
 
 from .widgets import ToolTip
+
+ENGINE_COMPARE_LABEL = "Compare legacy and corrected"
+ENGINE_OPTIONS = (
+    ENGINE_LABELS[ENGINE_LEGACY],
+    ENGINE_LABELS[ENGINE_CORRECTED],
+    ENGINE_COMPARE_LABEL,
+)
+ENGINE_BY_LABEL = {
+    ENGINE_LABELS[ENGINE_LEGACY]: (ENGINE_LEGACY,),
+    ENGINE_LABELS[ENGINE_CORRECTED]: (ENGINE_CORRECTED,),
+    ENGINE_COMPARE_LABEL: (ENGINE_LEGACY, ENGINE_CORRECTED),
+}
+
+OBJECTIVE_TOTAL_LABEL = "Total appearance shift"
+OBJECTIVE_CHROMATIC_LABEL = "Chromatic shift"
+OBJECTIVE_BY_LABEL = {
+    OBJECTIVE_TOTAL_LABEL: OBJECTIVE_TOTAL,
+    OBJECTIVE_CHROMATIC_LABEL: OBJECTIVE_CHROMATIC,
+}
 
 
 class ColourShiftApp:
@@ -19,6 +50,9 @@ class ColourShiftApp:
 
         self.min_delta = tk.DoubleVar(value=10.0)
         self.results = []
+        self.result_groups = []
+        self.engine_mode = tk.StringVar(value=ENGINE_LABELS[ENGINE_LEGACY])
+        self.objective_mode = tk.StringVar(value=OBJECTIVE_TOTAL_LABEL)
         self.current_mode = "compare"  # Can be 'compare', 'set_base', 'set_surround'
         self.is_searching = False
 
@@ -91,8 +125,28 @@ class ColourShiftApp:
         self.row_save = tk.Frame(self.top_container)
         self.row_save.pack(fill=tk.X, pady=5)
 
+        tk.Label(self.row_save, text="Maximal Shift engine").pack(side=tk.LEFT, padx=(10, 2))
+        self.engine_selector = ttk.Combobox(
+            self.row_save,
+            textvariable=self.engine_mode,
+            values=ENGINE_OPTIONS,
+            state="readonly",
+            width=29,
+        )
+        self.engine_selector.pack(side=tk.LEFT, padx=2)
+
+        tk.Label(self.row_save, text="Objective").pack(side=tk.LEFT, padx=(10, 2))
+        self.objective_selector = ttk.Combobox(
+            self.row_save,
+            textvariable=self.objective_mode,
+            values=(OBJECTIVE_TOTAL_LABEL, OBJECTIVE_CHROMATIC_LABEL),
+            state="readonly",
+            width=22,
+        )
+        self.objective_selector.pack(side=tk.LEFT, padx=2)
+
         self.save_btn = tk.Button(self.row_save, text="Save JSON", command=self.save_solution_json)
-        self.save_btn.pack(side=tk.LEFT, padx=10)
+        self.save_btn.pack(side=tk.LEFT, padx=(12, 4))
 
         self.status_label = tk.Label(self.row_save, text="", anchor="w")
         self.status_label.pack(side=tk.LEFT, padx=10)
@@ -149,9 +203,17 @@ class ColourShiftApp:
         self.preview_label.pack(side=tk.TOP, pady=5)
         self.update_preview_label()
 
-    def create_result_patch(self, rgb, delta, click_handler_factory, include_export=False):
+    def create_result_patch(
+        self,
+        rgb,
+        delta,
+        click_handler_factory,
+        include_export=False,
+        chromatic_delta=None,
+        parent=None,
+    ):
         hex_col = rgb_to_hex(rgb)
-        patch_frame = tk.Frame(self.preview_frame)
+        patch_frame = tk.Frame(parent or self.preview_frame)
         patch_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, padx=5, pady=5)
 
         canvas = tk.Canvas(
@@ -165,7 +227,10 @@ class ColourShiftApp:
         canvas.bind("<Button-1>", click_handler_factory(hex_col))
         canvas.pack()
 
-        label = tk.Label(patch_frame, text=f"ΔE = {delta:.2f}", bg="white", fg="black")
+        label_text = f"{hex_col}\nTotal = {delta:.2f}"
+        if chromatic_delta is not None:
+            label_text += f"\nChromatic = {chromatic_delta:.2f}"
+        label = tk.Label(patch_frame, text=label_text, bg="white", fg="black")
         label.pack()
 
         if include_export:
@@ -181,6 +246,9 @@ class ColourShiftApp:
         state = tk.DISABLED if is_searching else tk.NORMAL
         for button in (self.solve_btn, self.base_extreme_btn, self.surround_extreme_btn):
             button.config(state=state)
+        selector_state = "disabled" if is_searching else "readonly"
+        self.engine_selector.config(state=selector_state)
+        self.objective_selector.config(state=selector_state)
         self.status_label.config(text=message)
 
     def run_search(self, label, search_fn, render_fn):
@@ -273,24 +341,44 @@ class ColourShiftApp:
         base_rgb = hex_to_rgb(self.base_color)
         surround_rgb = hex_to_rgb(self.original_surround)
         min_delta = self.min_delta.get()
+        engines = ENGINE_BY_LABEL[self.engine_mode.get()]
+        objective = OBJECTIVE_BY_LABEL[self.objective_mode.get()]
 
         self.run_search(
             "Searching for maximal shifts...",
-            lambda: compute_appearance_difference(base_rgb, surround_rgb, min_delta=min_delta),
-            self.show_appearance_results,
+            lambda: compare_appearance_engines(
+                base_rgb,
+                surround_rgb,
+                engines=engines,
+                objective=objective,
+                min_delta=min_delta,
+            ),
+            self.show_appearance_result_groups,
         )
 
-    def show_appearance_results(self, results):
-        self.results = results
+    def show_appearance_result_groups(self, result_groups):
+        self.result_groups = result_groups
+        self.results = [candidate for group in result_groups for candidate in group.candidates]
         self.reset_preview("compare")
 
-        for result in self.results:
-            self.create_result_patch(
-                result.rgb,
-                result.delta_e,
-                click_handler_factory=lambda hex_col: partial(self.handle_patch_click, hex_col),
-                include_export=True,
+        for group in result_groups:
+            group_frame = tk.LabelFrame(
+                self.preview_frame,
+                text=f"{group.engine_label} — ranked by {group.objective} shift",
+                bg="#808080",
+                fg="white",
             )
+            group_frame.pack(side=tk.TOP, fill=tk.X, expand=True, padx=8, pady=5)
+
+            for result in group.candidates:
+                self.create_result_patch(
+                    result.rgb,
+                    result.delta_e,
+                    click_handler_factory=lambda hex_col: partial(self.handle_patch_click, hex_col),
+                    include_export=True,
+                    chromatic_delta=result.chromatic_delta,
+                    parent=group_frame,
+                )
 
     def save_solution_json(self):
         filepath = filedialog.asksaveasfilename(
@@ -299,7 +387,20 @@ class ColourShiftApp:
             title="Save Solution As",
         )
         if filepath:
-            save_solution_json(filepath, self.base_color, self.original_surround, self.results)
+            if self.result_groups:
+                save_engine_comparison_json(
+                    filepath,
+                    self.base_color,
+                    self.original_surround,
+                    self.result_groups,
+                )
+            else:
+                save_solution_json(
+                    filepath,
+                    self.base_color,
+                    self.original_surround,
+                    self.results,
+                )
 
     def export_comparison_image(self, hex_color):
         file_path = filedialog.asksaveasfilename(
@@ -333,6 +434,8 @@ class ColourShiftApp:
         )
 
     def show_candidates(self, candidates, set_surround=True):
+        self.result_groups = []
+        self.results = candidates
         mode = "set_surround" if set_surround else "set_base"
         self.reset_preview(mode)
 

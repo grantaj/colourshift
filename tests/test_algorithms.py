@@ -1,5 +1,7 @@
 import math
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from colourshift.core import algorithms
@@ -78,3 +80,120 @@ def test_sensitive_base_reference_uses_candidate_base(monkeypatch):
     shifted_appearance, reference_appearance = delta_calls[0]
     assert shifted_appearance == (candidate_base, fixed_surround)
     assert reference_appearance == (candidate_base, candidate_base)
+
+
+def test_legacy_engine_preserves_historical_positional_parameter_mapping(monkeypatch):
+    captured = {}
+
+    def fake_ciecam02(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+        return SimpleNamespace(J=50.0, M=20.0, h=30.0)
+
+    monkeypatch.setattr(algorithms, "XYZ_to_CIECAM02", fake_ciecam02)
+    monkeypatch.setattr(algorithms, "JMh_CIECAM02_to_CAM02UCS", np.asarray)
+
+    config = Config(background_luminance=12.0, adapting_luminance=34.0)
+    algorithms._cam02_ucs((1.0, 2.0, 3.0), (4.0, 5.0, 6.0), config)
+
+    assert captured["args"][:2] == ((1.0, 2.0, 3.0), (4.0, 5.0, 6.0))
+    assert captured["args"][2:] == (12.0, 34.0)
+    assert set(captured["kwargs"]) == {"surround"}
+
+
+def test_corrected_engine_maps_config_to_explicit_ciecam02_parameters(monkeypatch):
+    captured = {}
+
+    def fake_ciecam02(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(J=50.0, M=20.0, h=30.0)
+
+    monkeypatch.setattr(algorithms, "XYZ_to_CIECAM02", fake_ciecam02)
+    monkeypatch.setattr(algorithms, "JMh_CIECAM02_to_CAM02UCS", np.asarray)
+
+    config = Config(background_luminance=12.0, adapting_luminance=34.0)
+    algorithms._cam02_ucs_corrected(
+        (1.0, 2.0, 3.0),
+        (4.0, 5.0, 6.0),
+        config,
+    )
+
+    assert captured["XYZ"] == (1.0, 2.0, 3.0)
+    assert captured["XYZ_w"] == (4.0, 5.0, 6.0)
+    assert captured["L_A"] == 34.0
+    assert captured["Y_b"] == 12.0
+    assert captured["surround"] is algorithms._viewing_condition(config)
+
+
+def test_chromatic_objective_changes_candidate_ranking(monkeypatch):
+    reference_surround = (0.5, 0.5, 0.5)
+    high_total = (1.0, 0.0, 0.0)
+    high_chromatic = (0.0, 1.0, 0.0)
+    appearances = {
+        reference_surround: np.asarray((0.0, 0.0, 0.0)),
+        high_total: np.asarray((10.0, 0.0, 1.0)),
+        high_chromatic: np.asarray((0.0, 2.0, 0.0)),
+    }
+
+    monkeypatch.setattr(algorithms, "rgb_to_XYZ", lambda rgb: tuple(rgb))
+    monkeypatch.setattr(
+        algorithms,
+        "_rgb_grid",
+        lambda _points: [list(high_total), list(high_chromatic)],
+    )
+    monkeypatch.setattr(
+        algorithms,
+        "_appearance_function",
+        lambda _engine: lambda _stimulus, surround, _config: appearances[tuple(surround)],
+    )
+
+    config = Config(rgb_grid_points=2, min_delta=0.0, max_candidates=1)
+    total = algorithms.compute_appearance_difference(
+        (0.2, 0.2, 0.2),
+        reference_surround,
+        config=config,
+        objective=algorithms.OBJECTIVE_TOTAL,
+    )
+    chromatic = algorithms.compute_appearance_difference(
+        (0.2, 0.2, 0.2),
+        reference_surround,
+        config=config,
+        objective=algorithms.OBJECTIVE_CHROMATIC,
+    )
+
+    assert total[0].rgb == list(high_total)
+    assert chromatic[0].rgb == list(high_chromatic)
+    assert chromatic[0].delta_e == pytest.approx(2.0)
+    assert chromatic[0].chromatic_delta == pytest.approx(2.0)
+
+
+def test_compare_appearance_engines_labels_each_result_group(monkeypatch):
+    candidate = algorithms.ColourShiftResult(
+        rgb=[0.1, 0.2, 0.3],
+        delta_e=4.0,
+        chromatic_delta=3.0,
+    )
+    calls = []
+
+    def fake_compute(*args, **kwargs):
+        calls.append(kwargs)
+        return [candidate]
+
+    monkeypatch.setattr(algorithms, "compute_appearance_difference", fake_compute)
+
+    groups = algorithms.compare_appearance_engines(
+        (0.4, 0.5, 0.6),
+        (0.7, 0.8, 0.9),
+        objective=algorithms.OBJECTIVE_CHROMATIC,
+    )
+
+    assert [group.engine for group in groups] == [
+        algorithms.ENGINE_LEGACY,
+        algorithms.ENGINE_CORRECTED,
+    ]
+    assert all(group.objective == algorithms.OBJECTIVE_CHROMATIC for group in groups)
+    assert all(group.candidates == [candidate] for group in groups)
+    assert [call["engine"] for call in calls] == [
+        algorithms.ENGINE_LEGACY,
+        algorithms.ENGINE_CORRECTED,
+    ]

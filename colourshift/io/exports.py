@@ -44,6 +44,57 @@ def save_solution_json(path, base_hex, surround_hex, candidates, mode=None, conf
     output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
 
 
+def build_engine_comparison_payload(base_hex, surround_hex, result_groups):
+    """Serialise side-by-side appearance-engine search results."""
+    return {
+        "base_color": {
+            "hex": base_hex,
+            "rgb": hex_to_rgb(base_hex),
+        },
+        "surround_color": {
+            "hex": surround_hex,
+            "rgb": hex_to_rgb(surround_hex),
+        },
+        "search": {
+            "mode": "maximal-surround-shift",
+            "engines": [group.engine for group in result_groups],
+            "objective": result_groups[0].objective if result_groups else None,
+        },
+        "results": [
+            {
+                "engine": group.engine,
+                "engine_label": group.engine_label,
+                "objective": group.objective,
+                "candidates": [
+                    {
+                        "hex": rgb_to_hex(candidate.rgb),
+                        "rgb": list(candidate.rgb),
+                        "total_shift": float(candidate.delta_e),
+                        "chromatic_shift": (
+                            None
+                            if candidate.chromatic_delta is None
+                            else float(candidate.chromatic_delta)
+                        ),
+                    }
+                    for candidate in group.candidates
+                ],
+            }
+            for group in result_groups
+        ],
+    }
+
+
+def save_engine_comparison_json(path, base_hex, surround_hex, result_groups):
+    payload = build_engine_comparison_payload(
+        base_hex,
+        surround_hex,
+        result_groups,
+    )
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
+
+
 def create_comparison_image(
     left_base_hex,
     left_surround_hex,

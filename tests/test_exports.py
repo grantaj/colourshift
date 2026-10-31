@@ -1,8 +1,19 @@
 import json
 
-from colourshift.core.algorithms import ColourShiftResult
+from colourshift.core.algorithms import (
+    ENGINE_CORRECTED,
+    ENGINE_LABELS,
+    OBJECTIVE_CHROMATIC,
+    ColourShiftResult,
+    EngineSearchResults,
+)
 from colourshift.core.config import Config
-from colourshift.io import build_solution_payload, create_comparison_image, save_solution_json
+from colourshift.io import (
+    build_engine_comparison_payload,
+    build_solution_payload,
+    create_comparison_image,
+    save_solution_json,
+)
 
 
 def test_build_solution_payload_serialises_candidates():
@@ -69,6 +80,46 @@ def test_save_solution_json_writes_payload(tmp_path):
             "hex": "#00ff00",
             "rgb": [0.0, 1.0, 0.0],
             "deltaE": 3.0,
+        }
+    ]
+
+
+def test_build_engine_comparison_payload_preserves_model_and_objective():
+    groups = [
+        EngineSearchResults(
+            engine=ENGINE_CORRECTED,
+            engine_label=ENGINE_LABELS[ENGINE_CORRECTED],
+            objective=OBJECTIVE_CHROMATIC,
+            candidates=[
+                ColourShiftResult(
+                    rgb=[0.0, 1.0, 0.0],
+                    delta_e=7.5,
+                    chromatic_delta=6.25,
+                )
+            ],
+        )
+    ]
+
+    payload = build_engine_comparison_payload("#950000", "#964301", groups)
+
+    assert payload["search"] == {
+        "mode": "maximal-surround-shift",
+        "engines": [ENGINE_CORRECTED],
+        "objective": OBJECTIVE_CHROMATIC,
+    }
+    assert payload["results"] == [
+        {
+            "engine": ENGINE_CORRECTED,
+            "engine_label": ENGINE_LABELS[ENGINE_CORRECTED],
+            "objective": OBJECTIVE_CHROMATIC,
+            "candidates": [
+                {
+                    "hex": "#00ff00",
+                    "rgb": [0.0, 1.0, 0.0],
+                    "total_shift": 7.5,
+                    "chromatic_shift": 6.25,
+                }
+            ],
         }
     ]
 
