@@ -4,44 +4,47 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
+from colourshift.core.algorithms import SearchResult
+from colourshift.core.colour_models import rgb_to_hex
 
 NEUTRAL_GREY_HEX = "#808080"
 
 
-def build_solution_payload(base_hex, surround_hex, candidates, mode=None, config=None):
-    search = {}
-    if mode is not None:
-        search["mode"] = mode
-    if config is not None:
-        search["config"] = asdict(config)
+def _colour_payload(rgb):
+    if rgb is None:
+        return None
+    return {"hex": rgb_to_hex(rgb), "rgb": list(rgb)}
 
+
+def build_search_result_payload(result: SearchResult):
+    """Serialise the stable, versioned search-result contract."""
     return {
-        "base_color": {
-            "hex": base_hex,
-            "rgb": hex_to_rgb(base_hex),
-        },
-        "surround_color": {
-            "hex": surround_hex,
-            "rgb": hex_to_rgb(surround_hex),
+        "schema": "colourshift-search-result-v1",
+        "model": result.model,
+        "mode": result.mode,
+        "objective": result.objective,
+        "config": asdict(result.config),
+        "inputs": {
+            "base": _colour_payload(result.base_rgb),
+            "surround": _colour_payload(result.surround_rgb),
         },
         "candidates": [
             {
                 "hex": rgb_to_hex(candidate.rgb),
                 "rgb": list(candidate.rgb),
-                "deltaE": float(candidate.delta_e),
+                "total_shift": float(candidate.total_shift),
+                "chromatic_shift": float(candidate.chromatic_shift),
             }
-            for candidate in candidates
+            for candidate in result.candidates
         ],
-        "search": search,
     }
 
 
-def save_solution_json(path, base_hex, surround_hex, candidates, mode=None, config=None):
-    payload = build_solution_payload(base_hex, surround_hex, candidates, mode=mode, config=config)
+def save_search_result_json(path, result: SearchResult):
+    payload = build_search_result_payload(result)
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def create_comparison_image(

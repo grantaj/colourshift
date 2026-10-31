@@ -1,0 +1,2 @@
+include docs/colourshift-numerical-contract.md
+recursive-include tests/fixtures *.json

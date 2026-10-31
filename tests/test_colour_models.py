@@ -32,7 +32,8 @@ def test_rgb_to_hex_rejects_invalid_values(rgb):
 
 def test_is_valid_jmh_rejects_non_finite_and_out_of_range_values():
     assert is_valid_JMh(50, 25, 180)
+    assert is_valid_JMh(150, 125, 180)
     assert not is_valid_JMh(float("nan"), 25, 180)
-    assert not is_valid_JMh(101, 25, 180)
-    assert not is_valid_JMh(50, 101, 180)
+    assert not is_valid_JMh(-1, 25, 180)
+    assert not is_valid_JMh(50, -1, 180)
     assert not is_valid_JMh(50, 25, 361)

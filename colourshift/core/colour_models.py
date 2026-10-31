@@ -32,10 +32,5 @@ def rgb_to_XYZ(rgb):
 
 def is_valid_JMh(J, M, h):
     return (
-        np.isfinite(J)
-        and np.isfinite(M)
-        and np.isfinite(h)
-        and 0 <= J <= 100
-        and 0 <= M <= 100
-        and 0 <= h <= 360
+        np.isfinite(J) and np.isfinite(M) and np.isfinite(h) and J >= 0 and M >= 0 and 0 <= h <= 360
     )
