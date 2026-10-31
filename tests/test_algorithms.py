@@ -197,3 +197,66 @@ def test_compare_appearance_engines_labels_each_result_group(monkeypatch):
         algorithms.ENGINE_LEGACY,
         algorithms.ENGINE_CORRECTED,
     ]
+
+
+def test_chromatic_filter_rejects_candidates_separated_only_by_lightness():
+    candidates = [
+        ([1.0, 0.0, 0.0], 30.0, np.asarray((0.0, 0.0, 0.0))),
+        ([0.0, 1.0, 0.0], 29.0, np.asarray((100.0, 1.0, 1.0))),
+        ([0.0, 0.0, 1.0], 28.0, np.asarray((0.0, 20.0, 0.0))),
+    ]
+
+    total = algorithms._filter_separated_candidates(
+        candidates,
+        min_delta=10.0,
+        max_candidates=2,
+        objective=algorithms.OBJECTIVE_TOTAL,
+    )
+    chromatic = algorithms._filter_separated_candidates(
+        candidates,
+        min_delta=10.0,
+        max_candidates=2,
+        objective=algorithms.OBJECTIVE_CHROMATIC,
+    )
+
+    assert [item[0] for item in total] == [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+    ]
+    assert [item[0] for item in chromatic] == [
+        [1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ]
+
+
+def test_compare_extreme_shift_engines_propagates_engine_and_objective(monkeypatch):
+    candidate = algorithms.ColourShiftResult(
+        rgb=[0.1, 0.2, 0.3],
+        delta_e=4.0,
+        chromatic_delta=3.0,
+    )
+    calls = []
+
+    def fake_find(*args, **kwargs):
+        calls.append((args, kwargs))
+        return [candidate]
+
+    monkeypatch.setattr(algorithms, "find_extreme_shift_colors", fake_find)
+
+    groups = algorithms.compare_extreme_shift_engines(
+        (0.4, 0.5, 0.6),
+        fixed_as_base=True,
+        objective=algorithms.OBJECTIVE_CHROMATIC,
+    )
+
+    assert [group.engine for group in groups] == [
+        algorithms.ENGINE_LEGACY,
+        algorithms.ENGINE_CORRECTED,
+    ]
+    assert all(group.objective == algorithms.OBJECTIVE_CHROMATIC for group in groups)
+    assert all(args[1] is True for args, _kwargs in calls)
+    assert [kwargs["engine"] for _args, kwargs in calls] == [
+        algorithms.ENGINE_LEGACY,
+        algorithms.ENGINE_CORRECTED,
+    ]
+    assert all(kwargs["objective"] == algorithms.OBJECTIVE_CHROMATIC for _args, kwargs in calls)

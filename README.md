@@ -27,21 +27,23 @@ The main actions are:
 - `Sensitive Bases`: keep the surround fixed and search for sensitive bases.
 - `Strongest Surrounds`: search surrounds that most strongly affect the base.
 
-The `Min ΔE` slider controls how different returned candidates must be from
-each other in CAM02-UCS space.
+The `Min result separation` slider controls how different returned candidate
+appearances must be from each other.
 
-For `Maximal Shift`, the engine selector can run the historical CIECAM02
+The engine selector can run the historical CIECAM02
 adaptation proxy, a corrected-parameter version of that proxy, or both for
-side-by-side inspection. The historical engine remains the default and
-reproduces the existing results. The corrected engine maps the configured
-adapting luminance to CIECAM02 `L_A` and the background luminous factor to
-`Y_b` using explicit keyword arguments.
+side-by-side inspection in all three search modes. The historical engine
+remains the default and reproduces the existing results. The corrected engine
+maps the configured adapting luminance to CIECAM02 `L_A` and the background
+luminous factor to `Y_b` using explicit keyword arguments.
 
 Results can be ranked by total CAM02-UCS appearance shift or by chromatic
-displacement alone. Both scores are shown beneath each candidate. These two
-engines still use the coloured surround as a reference-white adaptation proxy;
-the corrected engine fixes parameter mapping but is not yet a dedicated
-simultaneous-contrast model.
+displacement alone. In chromatic mode, the minimum result-separation filter
+also operates only in the chromatic `a′b′` plane, avoiding candidates that
+differ mostly in lightness. Both scores are shown beneath each candidate.
+These two engines still use the coloured surround as a reference-white
+adaptation proxy; the corrected engine fixes parameter mapping but is not yet
+a dedicated simultaneous-contrast model.
 
 ## Watercolour Effect model
 

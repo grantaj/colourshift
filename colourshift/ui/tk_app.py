@@ -10,7 +10,7 @@ from colourshift.core.algorithms import (
     OBJECTIVE_CHROMATIC,
     OBJECTIVE_TOTAL,
     compare_appearance_engines,
-    find_extreme_shift_colors,
+    compare_extreme_shift_engines,
 )
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 from colourshift.io import (
@@ -40,6 +40,10 @@ OBJECTIVE_BY_LABEL = {
     OBJECTIVE_CHROMATIC_LABEL: OBJECTIVE_CHROMATIC,
 }
 
+MODE_MAXIMAL_SURROUND_SHIFT = "maximal-surround-shift"
+MODE_STRONGEST_SURROUNDS = "strongest-surrounds"
+MODE_SENSITIVE_BASES = "sensitive-bases"
+
 
 class ColourShiftApp:
     def __init__(self, root):
@@ -51,6 +55,7 @@ class ColourShiftApp:
         self.min_delta = tk.DoubleVar(value=10.0)
         self.results = []
         self.result_groups = []
+        self.result_mode = None
         self.engine_mode = tk.StringVar(value=ENGINE_LABELS[ENGINE_LEGACY])
         self.objective_mode = tk.StringVar(value=OBJECTIVE_TOTAL_LABEL)
         self.current_mode = "compare"  # Can be 'compare', 'set_base', 'set_surround'
@@ -125,7 +130,7 @@ class ColourShiftApp:
         self.row_save = tk.Frame(self.top_container)
         self.row_save.pack(fill=tk.X, pady=5)
 
-        tk.Label(self.row_save, text="Maximal Shift engine").pack(side=tk.LEFT, padx=(10, 2))
+        tk.Label(self.row_save, text="Engine").pack(side=tk.LEFT, padx=(10, 2))
         self.engine_selector = ttk.Combobox(
             self.row_save,
             textvariable=self.engine_mode,
@@ -154,7 +159,10 @@ class ColourShiftApp:
         self.slider_frame = tk.Frame(root)
         self.slider_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
-        tk.Label(self.slider_frame, text="Min ΔE").pack(side=tk.LEFT, padx=5)
+        tk.Label(self.slider_frame, text="Min result separation").pack(
+            side=tk.LEFT,
+            padx=5,
+        )
         tk.Scale(
             self.slider_frame,
             from_=0.0,
@@ -353,13 +361,25 @@ class ColourShiftApp:
                 objective=objective,
                 min_delta=min_delta,
             ),
-            self.show_appearance_result_groups,
+            lambda groups: self.show_engine_result_groups(
+                groups,
+                display_mode="compare",
+                result_mode=MODE_MAXIMAL_SURROUND_SHIFT,
+            ),
         )
 
-    def show_appearance_result_groups(self, result_groups):
+    def show_engine_result_groups(self, result_groups, *, display_mode, result_mode):
         self.result_groups = result_groups
+        self.result_mode = result_mode
         self.results = [candidate for group in result_groups for candidate in group.candidates]
-        self.reset_preview("compare")
+        self.reset_preview(display_mode)
+
+        def click_handler_factory(hex_col):
+            if display_mode == "compare":
+                return partial(self.handle_patch_click, hex_col)
+            if display_mode == "set_surround":
+                return lambda _event: self.set_surround(hex_col)
+            return lambda _event: self.set_base(hex_col)
 
         for group in result_groups:
             group_frame = tk.LabelFrame(
@@ -374,8 +394,8 @@ class ColourShiftApp:
                 self.create_result_patch(
                     result.rgb,
                     result.delta_e,
-                    click_handler_factory=lambda hex_col: partial(self.handle_patch_click, hex_col),
-                    include_export=True,
+                    click_handler_factory=click_handler_factory,
+                    include_export=display_mode == "compare",
                     chromatic_delta=result.chromatic_delta,
                     parent=group_frame,
                 )
@@ -393,6 +413,7 @@ class ColourShiftApp:
                     self.base_color,
                     self.original_surround,
                     self.result_groups,
+                    mode=self.result_mode,
                 )
             else:
                 save_solution_json(
@@ -419,22 +440,49 @@ class ColourShiftApp:
 
     def find_shifted_surrounds(self):
         base_rgb = hex_to_rgb(self.base_color)
+        min_delta = self.min_delta.get()
+        engines = ENGINE_BY_LABEL[self.engine_mode.get()]
+        objective = OBJECTIVE_BY_LABEL[self.objective_mode.get()]
         self.run_search(
             "Searching for strongest surrounds...",
-            lambda: find_extreme_shift_colors(base_rgb, fixed_as_base=True),
-            lambda candidates: self.show_candidates(candidates, set_surround=True),
+            lambda: compare_extreme_shift_engines(
+                base_rgb,
+                fixed_as_base=True,
+                engines=engines,
+                objective=objective,
+                min_delta=min_delta,
+            ),
+            lambda groups: self.show_engine_result_groups(
+                groups,
+                display_mode="set_surround",
+                result_mode=MODE_STRONGEST_SURROUNDS,
+            ),
         )
 
     def find_shifted_bases(self):
         surround_rgb = hex_to_rgb(self.original_surround)
+        min_delta = self.min_delta.get()
+        engines = ENGINE_BY_LABEL[self.engine_mode.get()]
+        objective = OBJECTIVE_BY_LABEL[self.objective_mode.get()]
         self.run_search(
             "Searching for sensitive bases...",
-            lambda: find_extreme_shift_colors(surround_rgb, fixed_as_base=False),
-            lambda candidates: self.show_candidates(candidates, set_surround=False),
+            lambda: compare_extreme_shift_engines(
+                surround_rgb,
+                fixed_as_base=False,
+                engines=engines,
+                objective=objective,
+                min_delta=min_delta,
+            ),
+            lambda groups: self.show_engine_result_groups(
+                groups,
+                display_mode="set_base",
+                result_mode=MODE_SENSITIVE_BASES,
+            ),
         )
 
     def show_candidates(self, candidates, set_surround=True):
         self.result_groups = []
+        self.result_mode = MODE_STRONGEST_SURROUNDS if set_surround else MODE_SENSITIVE_BASES
         self.results = candidates
         mode = "set_surround" if set_surround else "set_base"
         self.reset_preview(mode)

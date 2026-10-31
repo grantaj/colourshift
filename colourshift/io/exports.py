@@ -44,7 +44,12 @@ def save_solution_json(path, base_hex, surround_hex, candidates, mode=None, conf
     output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")
 
 
-def build_engine_comparison_payload(base_hex, surround_hex, result_groups):
+def build_engine_comparison_payload(
+    base_hex,
+    surround_hex,
+    result_groups,
+    mode="maximal-surround-shift",
+):
     """Serialise side-by-side appearance-engine search results."""
     return {
         "base_color": {
@@ -56,7 +61,7 @@ def build_engine_comparison_payload(base_hex, surround_hex, result_groups):
             "rgb": hex_to_rgb(surround_hex),
         },
         "search": {
-            "mode": "maximal-surround-shift",
+            "mode": mode,
             "engines": [group.engine for group in result_groups],
             "objective": result_groups[0].objective if result_groups else None,
         },
@@ -84,11 +89,18 @@ def build_engine_comparison_payload(base_hex, surround_hex, result_groups):
     }
 
 
-def save_engine_comparison_json(path, base_hex, surround_hex, result_groups):
+def save_engine_comparison_json(
+    path,
+    base_hex,
+    surround_hex,
+    result_groups,
+    mode="maximal-surround-shift",
+):
     payload = build_engine_comparison_payload(
         base_hex,
         surround_hex,
         result_groups,
+        mode=mode,
     )
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

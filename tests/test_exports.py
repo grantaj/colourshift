@@ -100,10 +100,15 @@ def test_build_engine_comparison_payload_preserves_model_and_objective():
         )
     ]
 
-    payload = build_engine_comparison_payload("#950000", "#964301", groups)
+    payload = build_engine_comparison_payload(
+        "#950000",
+        "#964301",
+        groups,
+        mode="sensitive-bases",
+    )
 
     assert payload["search"] == {
-        "mode": "maximal-surround-shift",
+        "mode": "sensitive-bases",
         "engines": [ENGINE_CORRECTED],
         "objective": OBJECTIVE_CHROMATIC,
     }

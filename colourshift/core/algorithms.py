@@ -114,10 +114,25 @@ def _rgb_grid(points):
                 yield [float(r), float(g), float(b)]
 
 
-def _filter_separated_candidates(candidates, min_delta, max_candidates):
+def _candidate_separation(left_ucs, right_ucs, objective):
+    if objective == OBJECTIVE_CHROMATIC:
+        difference = np.asarray(left_ucs, dtype=float) - np.asarray(right_ucs, dtype=float)
+        return float(np.linalg.norm(difference[1:]))
+    return float(delta_E_CAM02UCS(left_ucs, right_ucs))
+
+
+def _filter_separated_candidates(
+    candidates,
+    min_delta,
+    max_candidates,
+    objective=OBJECTIVE_TOTAL,
+):
     filtered = []
     for rgb, shift_delta, ucs in candidates:
-        if all(delta_E_CAM02UCS(ucs, other_ucs) >= min_delta for _, _, other_ucs in filtered):
+        if all(
+            _candidate_separation(ucs, other_ucs, objective) >= min_delta
+            for _, _, other_ucs in filtered
+        ):
             filtered.append((rgb, shift_delta, ucs))
         if len(filtered) >= max_candidates:
             break
@@ -167,7 +182,12 @@ def compute_appearance_difference(
 
     candidates.sort(key=lambda x: -x[1])
     filter_input = [(rgb, score, ucs) for rgb, score, ucs, _, _ in candidates]
-    filtered = _filter_separated_candidates(filter_input, min_delta, max_candidates)
+    filtered = _filter_separated_candidates(
+        filter_input,
+        min_delta,
+        max_candidates,
+        objective,
+    )
     components = {tuple(rgb): (total, chromatic) for rgb, _, _, total, chromatic in candidates}
     return [
         ColourShiftResult(
@@ -215,8 +235,13 @@ def find_extreme_shift_colors(
     min_delta=None,
     max_candidates=None,
     config=None,
+    engine=ENGINE_LEGACY,
+    objective=OBJECTIVE_TOTAL,
 ):
     config = _settings(config)
+    if objective not in OBJECTIVES:
+        raise ValueError(f"Unsupported search objective: {objective}")
+    appearance = _appearance_function(engine)
     min_delta = config.min_delta if min_delta is None else min_delta
     max_candidates = config.max_candidates if max_candidates is None else max_candidates
     fixed_XYZ = rgb_to_XYZ(fixed_rgb)
@@ -228,19 +253,67 @@ def find_extreme_shift_colors(
             try:
                 test_XYZ = rgb_to_XYZ(test_rgb)
                 if fixed_as_base:
-                    shifted_UCS = _cam02_ucs(fixed_XYZ, test_XYZ, config)
-                    reference_UCS = _cam02_ucs(fixed_XYZ, fixed_XYZ, config)
+                    shifted_UCS = appearance(fixed_XYZ, test_XYZ, config)
+                    reference_UCS = appearance(fixed_XYZ, fixed_XYZ, config)
                 else:
-                    shifted_UCS = _cam02_ucs(test_XYZ, fixed_XYZ, config)
-                    reference_UCS = _cam02_ucs(test_XYZ, test_XYZ, config)
+                    shifted_UCS = appearance(test_XYZ, fixed_XYZ, config)
+                    reference_UCS = appearance(test_XYZ, test_XYZ, config)
                 if shifted_UCS is None or reference_UCS is None:
                     continue
-                shift_delta = delta_E_CAM02UCS(shifted_UCS, reference_UCS)
-                if np.isfinite(shift_delta):
-                    candidates.append((test_rgb, float(shift_delta), shifted_UCS))
+                total_delta, chromatic_delta = _shift_components(
+                    shifted_UCS,
+                    reference_UCS,
+                )
+                score = total_delta if objective == OBJECTIVE_TOTAL else chromatic_delta
+                if np.isfinite(score):
+                    candidates.append((test_rgb, score, shifted_UCS, total_delta, chromatic_delta))
             except (ArithmeticError, ValueError, RuntimeWarning) as exc:
                 logger.debug("Skipping invalid extreme-shift candidate %s: %s", test_rgb, exc)
 
     candidates.sort(key=lambda x: -x[1])
-    filtered = _filter_separated_candidates(candidates, min_delta, max_candidates)
-    return [ColourShiftResult(rgb=rgb, delta_e=shift_delta) for rgb, shift_delta, _ in filtered]
+    filter_input = [(rgb, score, ucs) for rgb, score, ucs, _, _ in candidates]
+    filtered = _filter_separated_candidates(
+        filter_input,
+        min_delta,
+        max_candidates,
+        objective,
+    )
+    components = {tuple(rgb): (total, chromatic) for rgb, _, _, total, chromatic in candidates}
+    return [
+        ColourShiftResult(
+            rgb=rgb,
+            delta_e=components[tuple(rgb)][0],
+            chromatic_delta=components[tuple(rgb)][1],
+        )
+        for rgb, _, _ in filtered
+    ]
+
+
+def compare_extreme_shift_engines(
+    fixed_rgb,
+    fixed_as_base,
+    *,
+    engines=(ENGINE_LEGACY, ENGINE_CORRECTED),
+    objective=OBJECTIVE_TOTAL,
+    min_delta=None,
+    max_candidates=None,
+    config=None,
+):
+    """Run an extreme base/surround search through multiple engines."""
+    return [
+        EngineSearchResults(
+            engine=engine,
+            engine_label=ENGINE_LABELS[engine],
+            objective=objective,
+            candidates=find_extreme_shift_colors(
+                fixed_rgb,
+                fixed_as_base,
+                min_delta=min_delta,
+                max_candidates=max_candidates,
+                config=config,
+                engine=engine,
+                objective=objective,
+            ),
+        )
+        for engine in engines
+    ]
