@@ -5,15 +5,15 @@ from threading import Thread
 from tkinter import colorchooser, filedialog, ttk
 
 from colourshift.core.algorithms import (
+    EMPIRICAL_MODEL_LABEL,
     MODE_MAXIMAL_SURROUND_SHIFT,
     MODE_SENSITIVE_BASES,
     MODE_STRONGEST_SURROUNDS,
-    MODEL_LABEL,
     OBJECTIVE_CHROMATIC,
     OBJECTIVE_TOTAL,
-    find_maximal_surround_shift,
-    find_sensitive_bases,
-    find_strongest_surrounds,
+    find_empirical_maximal_surround_shift,
+    find_empirical_sensitive_bases,
+    find_empirical_strongest_surrounds,
 )
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 from colourshift.core.config import DEFAULT_CONFIG
@@ -35,7 +35,7 @@ class ColourShiftApp:
         self.root.title("ColourShift")
         self.base_color = "#950000"
         self.original_surround = "#964301"
-        self.min_delta = tk.DoubleVar(value=DEFAULT_CONFIG.min_delta)
+        self.min_delta = tk.DoubleVar(value=10.0)
         self.objective_mode = tk.StringVar(value=OBJECTIVE_CHROMATIC_LABEL)
         self.current_result = None
         self.current_mode = None
@@ -82,7 +82,7 @@ class ColourShiftApp:
 
         row_options = tk.Frame(top)
         row_options.pack(fill=tk.X, pady=5)
-        tk.Label(row_options, text=MODEL_LABEL).pack(side=tk.LEFT, padx=(10, 12))
+        tk.Label(row_options, text=EMPIRICAL_MODEL_LABEL).pack(side=tk.LEFT, padx=(10, 12))
         tk.Label(row_options, text="Objective").pack(side=tk.LEFT, padx=(0, 2))
         self.objective_selector = ttk.Combobox(
             row_options,
@@ -205,7 +205,11 @@ class ColourShiftApp:
         self.set_searching(False, f"Search failed: {exc}")
 
     def _config(self):
-        return replace(DEFAULT_CONFIG, min_delta=self.min_delta.get())
+        return replace(
+            DEFAULT_CONFIG,
+            adapting_luminance=64.0,
+            min_delta=self.min_delta.get(),
+        )
 
     def _objective(self):
         return OBJECTIVE_BY_LABEL[self.objective_mode.get()]
@@ -215,14 +219,16 @@ class ColourShiftApp:
         config, objective = self._config(), self._objective()
         self.run_search(
             "Searching for maximal shifts...",
-            lambda: find_maximal_surround_shift(base, surround, config=config, objective=objective),
+            lambda: find_empirical_maximal_surround_shift(
+                base, surround, config=config, objective=objective
+            ),
         )
 
     def find_shifted_surrounds(self):
         base, config, objective = hex_to_rgb(self.base_color), self._config(), self._objective()
         self.run_search(
             "Searching for strongest surrounds...",
-            lambda: find_strongest_surrounds(base, config=config, objective=objective),
+            lambda: find_empirical_strongest_surrounds(base, config=config, objective=objective),
         )
 
     def find_shifted_bases(self):
@@ -230,7 +236,7 @@ class ColourShiftApp:
         config, objective = self._config(), self._objective()
         self.run_search(
             "Searching for sensitive bases...",
-            lambda: find_sensitive_bases(surround, config=config, objective=objective),
+            lambda: find_empirical_sensitive_bases(surround, config=config, objective=objective),
         )
 
     def show_result(self, result):
@@ -248,7 +254,7 @@ class ColourShiftApp:
         self.reset_preview(instructions[result.mode])
         group = tk.LabelFrame(
             self.preview_frame,
-            text=f"{MODEL_LABEL} — ranked by {result.objective} shift",
+            text=f"{EMPIRICAL_MODEL_LABEL} — ranked by {result.objective} shift",
             bg="#808080",
             fg="white",
         )

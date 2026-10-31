@@ -20,14 +20,21 @@ from .config import DEFAULT_CONFIG, Config
 suppress_colour_optional_dependency_warnings()
 
 import colour  # noqa: E402
-from colour.appearance import XYZ_to_CAM16  # noqa: E402
+from colour.appearance import (  # noqa: E402
+    XYZ_to_CAM16,
+    XYZ_to_CIECAM02,
+)
+from colour.difference import delta_E_CAM02UCS  # noqa: E402
 from colour.models import JMh_CAM16_to_CAM16UCS  # noqa: E402
+from colour.models.cam02_ucs import JMh_CIECAM02_to_CAM02UCS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 MODEL_ID = "zhu-luo-cam16cc-2019-v1"
 MODEL_LABEL = "Zhu–Luo CAM16 simultaneous contrast (2019)"
 MODEL_DOI = "10.2352/ISSN.2169-2629.2019.27.34"
+EMPIRICAL_MODEL_ID = "empirical-ciecam02-white-point-v1"
+EMPIRICAL_MODEL_LABEL = "Empirical CIECAM02 white-point proxy"
 
 MODE_MAXIMAL_SURROUND_SHIFT = "maximal-surround-shift"
 MODE_STRONGEST_SURROUNDS = "strongest-surrounds"
@@ -99,6 +106,15 @@ def _viewing_condition(config: Config):
         ) from exc
 
 
+def _empirical_viewing_condition(config: Config):
+    try:
+        return colour.VIEWING_CONDITIONS_CIECAM02[config.viewing_condition]
+    except KeyError as exc:
+        raise ValueError(
+            f"Unsupported CIECAM02 viewing condition: {config.viewing_condition}"
+        ) from exc
+
+
 def _d65_white_xyz() -> np.ndarray:
     xy = colour.CCS_ILLUMINANTS["CIE 1931 2 Degree Standard Observer"]["D65"]
     return np.asarray(colour.xy_to_XYZ(xy), dtype=float) * 100.0
@@ -120,6 +136,29 @@ def _cam16_ucs(rgb, config: Config) -> np.ndarray:
     coordinates = np.asarray(JMh_CAM16_to_CAM16UCS(jmh), dtype=float)
     if not np.all(np.isfinite(coordinates)):
         raise ValueError("Colour does not produce finite CAM16-UCS coordinates")
+    return coordinates
+
+
+def _empirical_cam02_ucs(target_rgb, surround_rgb, config: Config) -> np.ndarray:
+    """Original surround-as-white-point proxy with corrected CAM parameters.
+
+    The coloured surround deliberately supplies ``XYZ_w``. This is retained
+    for the Tk studio tool because it is empirically useful, not because it is
+    a calibrated colour-appearance prediction.
+    """
+    spec = XYZ_to_CIECAM02(
+        XYZ=np.asarray(rgb_to_XYZ(_rgb_tuple(target_rgb)), dtype=float),
+        XYZ_w=np.asarray(rgb_to_XYZ(_rgb_tuple(surround_rgb)), dtype=float),
+        L_A=config.adapting_luminance,
+        Y_b=config.background_luminous_factor,
+        surround=_empirical_viewing_condition(config),
+    )
+    jmh = np.asarray((spec.J, spec.M, spec.h), dtype=float)
+    if not np.all(np.isfinite(jmh)) or jmh[0] < 0 or jmh[1] < 0:
+        raise ValueError("Colour does not produce finite CIECAM02 correlates")
+    coordinates = np.asarray(JMh_CIECAM02_to_CAM02UCS(jmh), dtype=float)
+    if not np.all(np.isfinite(coordinates)):
+        raise ValueError("Colour does not produce finite CAM02-UCS coordinates")
     return coordinates
 
 
@@ -253,6 +292,113 @@ def _rank_candidates(
         if len(selected) >= config.max_candidates:
             break
     return tuple(item.candidate for item in selected)
+
+
+def _rank_empirical_candidates(
+    evaluate: Callable[[RGB], tuple[np.ndarray, np.ndarray]],
+    config: Config,
+    objective: str,
+) -> tuple[ColourShiftCandidate, ...]:
+    """Rank the historical proxy using its original CAM02-UCS Delta E metric."""
+    ranked: list[_RankedCandidate] = []
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        for rgb in _rgb_grid(config.rgb_grid_points):
+            try:
+                shifted, reference = evaluate(rgb)
+                total = float(delta_E_CAM02UCS(reference, shifted))
+                chromatic = float(np.linalg.norm(shifted[1:] - reference[1:]))
+                score = total if objective == OBJECTIVE_TOTAL else chromatic
+                if np.isfinite(score):
+                    ranked.append(
+                        _RankedCandidate(
+                            ColourShiftCandidate(rgb, total, chromatic), score, shifted
+                        )
+                    )
+            except (ArithmeticError, ValueError, RuntimeWarning) as exc:
+                logger.debug("Skipping invalid empirical candidate %s: %s", rgb, exc)
+
+    ranked.sort(key=lambda item: (-item.score, item.candidate.rgb))
+    selected: list[_RankedCandidate] = []
+    for item in ranked:
+        if all(
+            delta_E_CAM02UCS(item.shifted_ucs, other.shifted_ucs) >= config.min_delta
+            for other in selected
+        ):
+            selected.append(item)
+        if len(selected) >= config.max_candidates:
+            break
+    return tuple(item.candidate for item in selected)
+
+
+def find_empirical_maximal_surround_shift(
+    base_rgb,
+    initial_surround_rgb,
+    *,
+    config: Config | None = None,
+    objective: str = OBJECTIVE_TOTAL,
+) -> SearchResult:
+    """Search surrounds with the corrected empirical white-point proxy."""
+    settings = _settings(config)
+    _validate_objective(objective)
+    base, surround = _rgb_tuple(base_rgb), _rgb_tuple(initial_surround_rgb)
+    reference = _empirical_cam02_ucs(base, surround, settings)
+    candidates = _rank_empirical_candidates(
+        lambda candidate: (_empirical_cam02_ucs(base, candidate, settings), reference),
+        settings,
+        objective,
+    )
+    return SearchResult(
+        EMPIRICAL_MODEL_ID,
+        MODE_MAXIMAL_SURROUND_SHIFT,
+        objective,
+        settings,
+        base,
+        surround,
+        candidates,
+    )
+
+
+def find_empirical_strongest_surrounds(
+    base_rgb,
+    *,
+    config: Config | None = None,
+    objective: str = OBJECTIVE_TOTAL,
+) -> SearchResult:
+    settings = _settings(config)
+    _validate_objective(objective)
+    base = _rgb_tuple(base_rgb)
+    reference = _empirical_cam02_ucs(base, base, settings)
+    candidates = _rank_empirical_candidates(
+        lambda candidate: (_empirical_cam02_ucs(base, candidate, settings), reference),
+        settings,
+        objective,
+    )
+    return SearchResult(
+        EMPIRICAL_MODEL_ID, MODE_STRONGEST_SURROUNDS, objective, settings, base, None, candidates
+    )
+
+
+def find_empirical_sensitive_bases(
+    surround_rgb,
+    *,
+    config: Config | None = None,
+    objective: str = OBJECTIVE_TOTAL,
+) -> SearchResult:
+    settings = _settings(config)
+    _validate_objective(objective)
+    surround = _rgb_tuple(surround_rgb)
+    candidates = _rank_empirical_candidates(
+        lambda candidate: (
+            _empirical_cam02_ucs(candidate, surround, settings),
+            _empirical_cam02_ucs(candidate, candidate, settings),
+        ),
+        settings,
+        objective,
+    )
+    return SearchResult(
+        EMPIRICAL_MODEL_ID, MODE_SENSITIVE_BASES, objective, settings, None, surround, candidates
+    )
 
 
 def find_maximal_surround_shift(
