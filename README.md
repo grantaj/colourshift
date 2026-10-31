@@ -30,12 +30,11 @@ The main actions are:
 The `Min result separation` slider controls how different returned candidate
 appearances must be from each other.
 
-The engine selector can run the historical CIECAM02
-adaptation proxy, a corrected-parameter version of that proxy, or both for
-side-by-side inspection in all three search modes. The historical engine
-remains the default and reproduces the existing results. The corrected engine
-maps the configured adapting luminance to CIECAM02 `L_A` and the background
-luminous factor to `Y_b` using explicit keyword arguments.
+The corrected CIECAM02 adaptation proxy is the default engine. The deprecated
+historical proxy remains selectable for reproducing existing paper results,
+and both can be shown side by side in all three search modes. The corrected
+engine maps the configured adapting luminance to CIECAM02 `L_A` and the
+background luminous factor to `Y_b` using explicit keyword arguments.
 
 Results can be ranked by total CAM02-UCS appearance shift or by chromatic
 displacement alone. In chromatic mode, the minimum result-separation filter

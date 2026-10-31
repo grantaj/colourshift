@@ -1,7 +1,11 @@
 import json
 
 from colourshift import cli
-from colourshift.core.algorithms import ColourShiftResult
+from colourshift.core.algorithms import (
+    ENGINE_CORRECTED,
+    OBJECTIVE_TOTAL,
+    ColourShiftResult,
+)
 from colourshift.io import NEUTRAL_GREY_HEX
 
 
@@ -33,6 +37,8 @@ def test_config_from_args_maps_cli_options():
     assert config.rgb_grid_points == 4
     assert config.min_delta == 6
     assert config.max_candidates == 2
+    assert args.engine == ENGINE_CORRECTED
+    assert args.objective == OBJECTIVE_TOTAL
 
 
 def test_cli_writes_json_and_figures(monkeypatch, tmp_path):
@@ -42,7 +48,7 @@ def test_cli_writes_json_and_figures(monkeypatch, tmp_path):
     monkeypatch.setattr(
         cli,
         "run_search",
-        lambda mode, base_hex, surround_hex, config: [
+        lambda mode, base_hex, surround_hex, config, engine, objective: [
             ColourShiftResult(rgb=[0.0, 1.0, 0.0], delta_e=7.5)
         ],
     )
@@ -64,6 +70,8 @@ def test_cli_writes_json_and_figures(monkeypatch, tmp_path):
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["search"]["mode"] == cli.MODE_MAXIMAL_SURROUND_SHIFT
+    assert payload["search"]["engine"] == ENGINE_CORRECTED
+    assert payload["search"]["objective"] == OBJECTIVE_TOTAL
     assert payload["search"]["config"]["rgb_grid_points"] == 2
     assert payload["candidates"][0]["hex"] == "#00ff00"
     assert (figures_dir / "1.png").exists()

@@ -188,14 +188,14 @@ def test_compare_appearance_engines_labels_each_result_group(monkeypatch):
     )
 
     assert [group.engine for group in groups] == [
-        algorithms.ENGINE_LEGACY,
         algorithms.ENGINE_CORRECTED,
+        algorithms.ENGINE_LEGACY,
     ]
     assert all(group.objective == algorithms.OBJECTIVE_CHROMATIC for group in groups)
     assert all(group.candidates == [candidate] for group in groups)
     assert [call["engine"] for call in calls] == [
-        algorithms.ENGINE_LEGACY,
         algorithms.ENGINE_CORRECTED,
+        algorithms.ENGINE_LEGACY,
     ]
 
 
@@ -250,13 +250,13 @@ def test_compare_extreme_shift_engines_propagates_engine_and_objective(monkeypat
     )
 
     assert [group.engine for group in groups] == [
-        algorithms.ENGINE_LEGACY,
         algorithms.ENGINE_CORRECTED,
+        algorithms.ENGINE_LEGACY,
     ]
     assert all(group.objective == algorithms.OBJECTIVE_CHROMATIC for group in groups)
     assert all(args[1] is True for args, _kwargs in calls)
     assert [kwargs["engine"] for _args, kwargs in calls] == [
-        algorithms.ENGINE_LEGACY,
         algorithms.ENGINE_CORRECTED,
+        algorithms.ENGINE_LEGACY,
     ]
     assert all(kwargs["objective"] == algorithms.OBJECTIVE_CHROMATIC for _args, kwargs in calls)

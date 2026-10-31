@@ -1,7 +1,14 @@
 import argparse
 from pathlib import Path
 
-from colourshift.core.algorithms import compute_appearance_difference, find_extreme_shift_colors
+from colourshift.core.algorithms import (
+    ENGINE_CORRECTED,
+    ENGINE_LEGACY,
+    OBJECTIVE_CHROMATIC,
+    OBJECTIVE_TOTAL,
+    compute_appearance_difference,
+    find_extreme_shift_colors,
+)
 from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 from colourshift.core.config import Config
 from colourshift.io import NEUTRAL_GREY_HEX, save_comparison_image, save_solution_json
@@ -33,13 +40,23 @@ def build_parser():
     )
     parser.add_argument("--output", required=True, help="Path for the JSON result file.")
     parser.add_argument(
+        "--engine",
+        choices=[ENGINE_CORRECTED, ENGINE_LEGACY],
+        default=ENGINE_CORRECTED,
+        help="Appearance engine; the legacy proxy is deprecated.",
+    )
+    parser.add_argument(
+        "--objective",
+        choices=[OBJECTIVE_TOTAL, OBJECTIVE_CHROMATIC],
+        default=OBJECTIVE_TOTAL,
+        help="Rank by total or chromatic appearance shift.",
+    )
+    parser.add_argument(
         "--figures-dir",
         help="Optional directory for generated comparison PNGs.",
     )
     parser.add_argument("--grid-points", type=int, default=12, help="RGB grid points per channel.")
-    parser.add_argument(
-        "--min-delta", type=float, default=10.0, help="Minimum candidate separation."
-    )
+    parser.add_argument("--min-delta", type=float, default=10.0, help="Minimum result separation.")
     parser.add_argument(
         "--max-candidates", type=int, default=3, help="Maximum candidates to export."
     )
@@ -51,16 +68,34 @@ def build_parser():
     return parser
 
 
-def run_search(mode, base_hex, surround_hex, config):
+def run_search(mode, base_hex, surround_hex, config, engine, objective):
     base_rgb = hex_to_rgb(base_hex)
     surround_rgb = hex_to_rgb(surround_hex)
 
     if mode == MODE_MAXIMAL_SURROUND_SHIFT:
-        return compute_appearance_difference(base_rgb, surround_rgb, config=config)
+        return compute_appearance_difference(
+            base_rgb,
+            surround_rgb,
+            config=config,
+            engine=engine,
+            objective=objective,
+        )
     if mode == MODE_STRONGEST_SURROUNDS:
-        return find_extreme_shift_colors(base_rgb, fixed_as_base=True, config=config)
+        return find_extreme_shift_colors(
+            base_rgb,
+            fixed_as_base=True,
+            config=config,
+            engine=engine,
+            objective=objective,
+        )
     if mode == MODE_SENSITIVE_BASES:
-        return find_extreme_shift_colors(surround_rgb, fixed_as_base=False, config=config)
+        return find_extreme_shift_colors(
+            surround_rgb,
+            fixed_as_base=False,
+            config=config,
+            engine=engine,
+            objective=objective,
+        )
     raise ValueError(f"Unsupported search mode: {mode}")
 
 
@@ -108,7 +143,14 @@ def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
     config = config_from_args(args)
-    candidates = run_search(args.mode, args.base, args.surround, config)
+    candidates = run_search(
+        args.mode,
+        args.base,
+        args.surround,
+        config,
+        args.engine,
+        args.objective,
+    )
 
     save_solution_json(
         args.output,
@@ -117,6 +159,8 @@ def main(argv=None):
         candidates,
         mode=args.mode,
         config=config,
+        engine=args.engine,
+        objective=args.objective,
     )
 
     if args.figures_dir:

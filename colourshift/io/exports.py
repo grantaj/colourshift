@@ -9,12 +9,24 @@ from colourshift.core.colour_models import hex_to_rgb, rgb_to_hex
 NEUTRAL_GREY_HEX = "#808080"
 
 
-def build_solution_payload(base_hex, surround_hex, candidates, mode=None, config=None):
+def build_solution_payload(
+    base_hex,
+    surround_hex,
+    candidates,
+    mode=None,
+    config=None,
+    engine=None,
+    objective=None,
+):
     search = {}
     if mode is not None:
         search["mode"] = mode
     if config is not None:
         search["config"] = asdict(config)
+    if engine is not None:
+        search["engine"] = engine
+    if objective is not None:
+        search["objective"] = objective
 
     return {
         "base_color": {
@@ -37,8 +49,25 @@ def build_solution_payload(base_hex, surround_hex, candidates, mode=None, config
     }
 
 
-def save_solution_json(path, base_hex, surround_hex, candidates, mode=None, config=None):
-    payload = build_solution_payload(base_hex, surround_hex, candidates, mode=mode, config=config)
+def save_solution_json(
+    path,
+    base_hex,
+    surround_hex,
+    candidates,
+    mode=None,
+    config=None,
+    engine=None,
+    objective=None,
+):
+    payload = build_solution_payload(
+        base_hex,
+        surround_hex,
+        candidates,
+        mode=mode,
+        config=config,
+        engine=engine,
+        objective=objective,
+    )
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, indent=4), encoding="utf-8")

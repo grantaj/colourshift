@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 ENGINE_LEGACY = "legacy-ciecam02-proxy"
 ENGINE_CORRECTED = "corrected-ciecam02-proxy"
 ENGINE_LABELS = {
-    ENGINE_LEGACY: "Legacy CIECAM02 proxy",
+    ENGINE_LEGACY: "Legacy CIECAM02 proxy (deprecated)",
     ENGINE_CORRECTED: "Corrected CIECAM02 proxy",
 }
 
@@ -203,7 +203,7 @@ def compare_appearance_engines(
     base_rgb,
     original_surround_rgb,
     *,
-    engines=(ENGINE_LEGACY, ENGINE_CORRECTED),
+    engines=(ENGINE_CORRECTED, ENGINE_LEGACY),
     objective=OBJECTIVE_TOTAL,
     min_delta=None,
     max_candidates=None,
@@ -293,7 +293,7 @@ def compare_extreme_shift_engines(
     fixed_rgb,
     fixed_as_base,
     *,
-    engines=(ENGINE_LEGACY, ENGINE_CORRECTED),
+    engines=(ENGINE_CORRECTED, ENGINE_LEGACY),
     objective=OBJECTIVE_TOTAL,
     min_delta=None,
     max_candidates=None,

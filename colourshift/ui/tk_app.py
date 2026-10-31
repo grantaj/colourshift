@@ -21,16 +21,16 @@ from colourshift.io import (
 
 from .widgets import ToolTip
 
-ENGINE_COMPARE_LABEL = "Compare legacy and corrected"
+ENGINE_COMPARE_LABEL = "Compare corrected and legacy"
 ENGINE_OPTIONS = (
-    ENGINE_LABELS[ENGINE_LEGACY],
     ENGINE_LABELS[ENGINE_CORRECTED],
     ENGINE_COMPARE_LABEL,
+    ENGINE_LABELS[ENGINE_LEGACY],
 )
 ENGINE_BY_LABEL = {
-    ENGINE_LABELS[ENGINE_LEGACY]: (ENGINE_LEGACY,),
     ENGINE_LABELS[ENGINE_CORRECTED]: (ENGINE_CORRECTED,),
-    ENGINE_COMPARE_LABEL: (ENGINE_LEGACY, ENGINE_CORRECTED),
+    ENGINE_COMPARE_LABEL: (ENGINE_CORRECTED, ENGINE_LEGACY),
+    ENGINE_LABELS[ENGINE_LEGACY]: (ENGINE_LEGACY,),
 }
 
 OBJECTIVE_TOTAL_LABEL = "Total appearance shift"
@@ -56,7 +56,7 @@ class ColourShiftApp:
         self.results = []
         self.result_groups = []
         self.result_mode = None
-        self.engine_mode = tk.StringVar(value=ENGINE_LABELS[ENGINE_LEGACY])
+        self.engine_mode = tk.StringVar(value=ENGINE_LABELS[ENGINE_CORRECTED])
         self.objective_mode = tk.StringVar(value=OBJECTIVE_TOTAL_LABEL)
         self.current_mode = "compare"  # Can be 'compare', 'set_base', 'set_surround'
         self.is_searching = False
