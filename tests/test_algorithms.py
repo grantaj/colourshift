@@ -53,6 +53,26 @@ def test_model_uses_fixed_d65_white_and_explicit_cam16_parameters(monkeypatch):
     assert captured["Y_b"] == 12.0
 
 
+def test_empirical_proxy_uses_surround_as_white_point_with_corrected_parameters(monkeypatch):
+    captured = {}
+
+    def fake_ciecam02(**kwargs):
+        captured.update(kwargs)
+        return SimpleNamespace(J=50.0, M=20.0, h=30.0)
+
+    monkeypatch.setattr(algorithms, "XYZ_to_CIECAM02", fake_ciecam02)
+    monkeypatch.setattr(algorithms, "JMh_CIECAM02_to_CAM02UCS", np.asarray)
+    monkeypatch.setattr(algorithms, "rgb_to_XYZ", lambda rgb: rgb)
+    config = Config(background_luminous_factor=12.0, adapting_luminance=34.0)
+
+    algorithms._empirical_cam02_ucs((0.1, 0.2, 0.3), (0.4, 0.5, 0.6), config)
+
+    assert captured["XYZ"] == pytest.approx((0.1, 0.2, 0.3))
+    assert captured["XYZ_w"] == pytest.approx((0.4, 0.5, 0.6))
+    assert captured["L_A"] == 34.0
+    assert captured["Y_b"] == 12.0
+
+
 def test_published_2019_correction_equations():
     delta = 20.0
     assert algorithms._lightness_contrast_correction(delta) == pytest.approx(

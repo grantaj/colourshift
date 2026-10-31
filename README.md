@@ -1,8 +1,8 @@
 # ColourShift
 
-ColourShift explores colour appearance and contextual colour effects. The main
-Tk application uses the Zhu–Luo CAM16 simultaneous-contrast model to search for surround/base colour
-combinations that produce large predicted perceptual shifts.
+ColourShift explores colour appearance and contextual colour effects. The Tk
+application uses an empirical CIECAM02/CAM02-UCS surround-as-white-point proxy
+to search for surround/base combinations that produce large predicted shifts.
 
 The repository also contains an experimental Watercolour Effect (WCE) forward
 model. It combines a reproduction of the Cohen-Duwek & Spitzer edge/filling-in
@@ -30,20 +30,18 @@ The main actions are:
 The `Min result separation` slider controls how different returned candidate
 appearances must be from each other.
 
-ColourShift has one supported model: `zhu-luo-cam16cc-2019-v1`, shown as
-**Zhu–Luo CAM16 simultaneous contrast (2019)**. Target and background colours
-are converted independently under a fixed D65 CAM16 adapting white. The model
-then applies Zhu and Luo's fitted lightness and hue-contrast corrections.
-The app defaults to the chromatic objective because the total objective is
-normally dominated by the model's intentionally strong lightness correction.
+The Tk application uses `empirical-ciecam02-white-point-v1`. It deliberately
+uses the coloured surround as the CIECAM02 adapting white point, with the
+corrected `L_A` and `Y_b` parameter mapping. This is a studio-search heuristic,
+not a calibrated observer model. The 2019 CAM16 model remains available through
+the programmatic and command-line interfaces.
 
-Results can be ranked by total CAM16-UCS appearance shift or by chromatic
+Results can be ranked by total CAM02-UCS appearance shift or by chromatic
 displacement alone. In chromatic mode, the minimum result-separation filter
 also operates only in the chromatic `a′b′` plane, avoiding candidates that
 differ mostly in lightness. Both scores are shown beneath each candidate.
-The 2019 model does not include an independent chroma-contrast term. See the
-[numerical contract](docs/colourshift-numerical-contract.md) for the precise
-mapping, search semantics, and portable reference fixture.
+See the [numerical contract](docs/colourshift-numerical-contract.md) for the
+2019 model's precise mapping, search semantics, and portable reference fixture.
 
 The same searches are available from the command line:
 
