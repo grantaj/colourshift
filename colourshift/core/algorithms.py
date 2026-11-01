@@ -115,6 +115,17 @@ def _empirical_viewing_condition(config: Config):
         ) from exc
 
 
+def _valid_empirical_jmh(jmh: np.ndarray) -> bool:
+    """Keep the finite CIECAM02 domain guard used by the original Tk model."""
+    J, M, h = (float(value) for value in jmh)
+    return (
+        all(np.isfinite((J, M, h)))
+        and 0.0 <= J <= 100.0
+        and 0.0 <= M <= 100.0
+        and 0.0 <= h <= 360.0
+    )
+
+
 def _d65_white_xyz() -> np.ndarray:
     xy = colour.CCS_ILLUMINANTS["CIE 1931 2 Degree Standard Observer"]["D65"]
     return np.asarray(colour.xy_to_XYZ(xy), dtype=float) * 100.0
@@ -154,8 +165,8 @@ def _empirical_cam02_ucs(target_rgb, surround_rgb, config: Config) -> np.ndarray
         surround=_empirical_viewing_condition(config),
     )
     jmh = np.asarray((spec.J, spec.M, spec.h), dtype=float)
-    if not np.all(np.isfinite(jmh)) or jmh[0] < 0 or jmh[1] < 0:
-        raise ValueError("Colour does not produce finite CIECAM02 correlates")
+    if not _valid_empirical_jmh(jmh):
+        raise ValueError("Colour is outside the empirical CIECAM02 domain")
     coordinates = np.asarray(JMh_CIECAM02_to_CAM02UCS(jmh), dtype=float)
     if not np.all(np.isfinite(coordinates)):
         raise ValueError("Colour does not produce finite CAM02-UCS coordinates")
