@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#111111" />
+  <title>ColourShift — design a colour shift</title>
+  <link rel="stylesheet" href="shift.css?v=2" />
+</head>
+<body>
+  <main class="app">
+    <header class="masthead">
+      <p class="eyebrow">ColourShift</p>
+      <h1>Make one colour look different.</h1>
+      <p class="lede">Choose a target colour and a starting surround, then explore alternative surrounds predicted to change its hue and chroma most strongly.</p>
+    </header>
+    <section class="controls" aria-label="ColourShift controls">
+      <label>Target colour <input id="target" type="color" value="#950000" /></label>
+      <label>Starting surround <input id="surround" type="color" value="#964301" /></label>
+      <button id="search" type="button">Go</button>
+    </section>
+    <p id="file-warning" class="file-warning" hidden>Chrome blocks this app when opened as a file. Start a local server, then open <code>http://localhost:8000/docs/shift/</code>.</p>
+    <section id="results" class="results" aria-live="polite">
+      <p class="hint">Your comparisons will appear here.</p>
+    </section>
+    <details class="about"><summary>About this experiment</summary><p>ColourShift is a model-driven exploration, not a guarantee that every observer, display, or lighting environment will see the same magnitude of change. The browser calculation uses ColourShift’s corrected empirical CIECAM02 white-point proxy: the chosen surround acts as the local reference field, with explicit viewing-condition parameters. It is a studio-search heuristic, not a calibrated observer model.</p></details>
+  </main>
+  <script>
+    if (window.location.protocol === "file:") document.querySelector("#file-warning").hidden = false;
+  </script>
+  <script type="module" src="app.js?v=7"></script>
+</body>
+</html>
