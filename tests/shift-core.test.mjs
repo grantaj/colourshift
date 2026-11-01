@@ -39,12 +39,12 @@ test("browser search matches the Tk empirical proxy ranking", () => {
     "maximal-surround-shift",
     hexToRgb("#950000"),
     hexToRgb("#964301"),
-    { objective: "chromatic", gridPoints: 7, minDelta: 10, maxCandidates: 3 },
+    { objective: "chromatic", gridPoints: 12, minDelta: 10, maxCandidates: 3 },
   );
 
   assert.deepEqual(result.candidates.map((candidate) => candidate.hex), [
-    "#2a55ff",
-    "#7f2aff",
-    "#5555ff",
+    "#8b00ff",
+    "#005ce7",
+    "#175ce7",
   ]);
 });
