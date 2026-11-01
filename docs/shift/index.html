@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#111111" />
   <title>ColourShift — design a colour shift</title>
-  <link rel="stylesheet" href="shift.css?v=2" />
+  <link rel="stylesheet" href="shift.css?v=3" />
 </head>
 <body>
   <main class="app">
@@ -17,6 +17,10 @@
     <section class="controls" aria-label="ColourShift controls">
       <label>Target colour <input id="target" type="color" value="#950000" /></label>
       <label>Starting surround <input id="surround" type="color" value="#964301" /></label>
+      <label class="separation" for="min-delta">
+        <span>Minimum result separation <output id="min-delta-value" for="min-delta">10</output></span>
+        <input id="min-delta" type="range" min="0" max="100" step="1" value="10" />
+      </label>
       <button id="search" type="button">Go</button>
     </section>
     <p id="file-warning" class="file-warning" hidden>Chrome blocks this app when opened as a file. Start a local server, then open <code>http://localhost:8000/docs/shift/</code>.</p>
@@ -28,6 +32,6 @@
   <script>
     if (window.location.protocol === "file:") document.querySelector("#file-warning").hidden = false;
   </script>
-  <script type="module" src="app.js?v=7"></script>
+  <script type="module" src="app.js?v=11"></script>
 </body>
 </html>

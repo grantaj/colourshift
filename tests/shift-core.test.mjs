@@ -18,3 +18,33 @@ test("search returns the portable result shape and both shift components", () =>
   assert.equal(result.candidates.length, 3);
   assert.ok(result.candidates.every((candidate) => candidate.total_shift >= candidate.chromatic_shift));
 });
+
+test("minimum separation selects distinct result sets", () => {
+  const options = {
+    objective: "chromatic",
+    gridPoints: 7,
+    minRgbDelta: 0.35,
+    maxCandidates: 3,
+  };
+  const base = hexToRgb("#950000");
+  const surround = hexToRgb("#964301");
+  const lowSeparation = search("maximal-surround-shift", base, surround, { ...options, minDelta: 20 });
+  const highSeparation = search("maximal-surround-shift", base, surround, { ...options, minDelta: 60 });
+
+  assert.notDeepEqual(lowSeparation.candidates, highSeparation.candidates);
+});
+
+test("browser search matches the Tk empirical proxy ranking", () => {
+  const result = search(
+    "maximal-surround-shift",
+    hexToRgb("#950000"),
+    hexToRgb("#964301"),
+    { objective: "chromatic", gridPoints: 7, minDelta: 10, maxCandidates: 3 },
+  );
+
+  assert.deepEqual(result.candidates.map((candidate) => candidate.hex), [
+    "#2a55ff",
+    "#7f2aff",
+    "#5555ff",
+  ]);
+});
