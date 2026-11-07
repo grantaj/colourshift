@@ -6,12 +6,47 @@ const minDelta = document.querySelector("#min-delta");
 const minDeltaValue = document.querySelector("#min-delta-value");
 const results = document.querySelector("#results");
 
+function updateReference() {
+  for (const patch of document.querySelectorAll(".reference-target")) patch.style.background = target.value;
+  for (const field of document.querySelectorAll(".reference-field")) field.style.background = surround.value;
+}
+
+function openPicker(picker) {
+  if (picker.showPicker) picker.showPicker();
+  else picker.click();
+}
+
+function bindReferenceEditor(editor) {
+  editor.querySelector(".reference-target").addEventListener("click", () => openPicker(target));
+  editor.querySelector(".reference-field").addEventListener("click", () => openPicker(surround));
+}
+
+function referenceEditor() {
+  const editor = document.createElement("div");
+  editor.className = "reference-editor";
+  editor.setAttribute("role", "group");
+  editor.setAttribute("aria-label", "Starting colour comparison");
+  const field = document.createElement("button");
+  field.type = "button"; field.className = "reference-field"; field.setAttribute("aria-label", "Choose surrounding colour");
+  field.style.background = surround.value;
+  const patch = document.createElement("button");
+  patch.type = "button"; patch.className = "reference-target"; patch.setAttribute("aria-label", "Choose target colour");
+  patch.style.background = target.value;
+  editor.append(field, patch);
+  bindReferenceEditor(editor);
+  return editor;
+}
+
 function comparisonCard(candidate, index, targetHex, startHex) {
   const card = document.createElement("article");
   card.className = "comparison";
   const swatches = document.createElement("div");
   swatches.className = "swatches";
-  for (const colour of [startHex, candidate.hex]) {
+  for (const [position, colour] of [startHex, candidate.hex].entries()) {
+    if (position === 0) {
+      swatches.append(referenceEditor());
+      continue;
+    }
     const field = document.createElement("div"); field.className = "swatch"; field.style.background = colour;
     const chip = document.createElement("div"); chip.className = "chip"; chip.style.background = targetHex; chip.setAttribute("aria-label", `Target ${targetHex} on ${colour}`);
     field.append(chip); swatches.append(field);
@@ -74,6 +109,10 @@ function run() {
 }
 
 const searchButton = document.querySelector("#search");
+for (const editor of document.querySelectorAll(".reference-editor")) bindReferenceEditor(editor);
+target.addEventListener("input", updateReference);
+surround.addEventListener("input", updateReference);
+updateReference();
 minDelta.addEventListener("input", () => { minDeltaValue.value = minDelta.value; });
 minDelta.addEventListener("change", () => {
   if (results.querySelector(".comparison")) run();

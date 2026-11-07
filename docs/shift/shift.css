@@ -8,9 +8,10 @@ h1 { font-size: clamp(2.4rem, 7vw, 5.8rem); line-height: .95; letter-spacing: -.
 .lede { color: #625b53; font-size: clamp(1rem, 2vw, 1.3rem); line-height: 1.5; }
 .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: end; margin: 3rem 0 2.5rem; }
 label { display: grid; gap: .55rem; color: #625b53; font-size: .88rem; }
-input[type=color] { width: 100%; height: 4.5rem; padding: 0; border: 0; border-radius: .5rem; background: transparent; appearance: none; -webkit-appearance: none; }
-input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
-input[type=color]::-webkit-color-swatch, input[type=color]::-moz-color-swatch { border: 0; border-radius: .5rem; }
+.colour-picker { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.reference-editor { position: relative; min-height: clamp(12rem, 28vw, 19rem); overflow: hidden; }
+.reference-field { position: absolute; inset: 0; width: 100%; border: 0; border-radius: 0; padding: 0; }
+.reference-target { position: absolute; top: 50%; left: 50%; width: clamp(5rem, 16vw, 10rem); aspect-ratio: 1; min-height: 0; transform: translate(-50%, -50%); border: 0; border-radius: .35rem; padding: 0; box-shadow: 0 0 0 1px #ffffff33; }
 input[type=range] { width: 100%; accent-color: #c8a56a; }
 select, button { width: 100%; min-height: 3.25rem; border: 1px solid #766653; border-radius: .45rem; background: #fffdf9; color: inherit; padding: .75rem 1rem; font: inherit; }
 button { cursor: pointer; background: #c8a56a; border-color: #c8a56a; color: #17130f; font-weight: 700; }
@@ -24,6 +25,7 @@ button:hover { background: #e2c58d; }
 .comparison { min-height: min(62vh, 42rem); border-radius: .65rem; overflow: hidden; background: #fffdf9; border: 1px solid #d4ccc0; display: grid; grid-template-rows: 1fr auto; }
 .swatches { display: grid; grid-template-columns: 1fr 1fr; min-height: min(56vh, 36rem); }
 .swatch { display: grid; place-items: center; }
+.empty-result { display: grid; place-items: center; padding: 2rem; background: #fffdf9; color: #9f968c; text-align: center; }
 .chip { width: clamp(6rem, 13vw, 10rem); height: clamp(6rem, 13vw, 10rem); border-radius: .35rem; box-shadow: 0 0 0 1px #ffffff33; }
 .comparison p { margin: 0; padding: .9rem 1rem 1rem; color: #625b53; font-size: .95rem; }
 .comparison strong { color: #211e1a; }
