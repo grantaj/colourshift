@@ -115,14 +115,15 @@ def _empirical_viewing_condition(config: Config):
         ) from exc
 
 
-def _valid_empirical_jmh(jmh: np.ndarray) -> bool:
-    """Keep the finite CIECAM02 domain guard used by the original Tk model."""
+def _valid_empirical_jmh(jmh: np.ndarray, *, allow_extended: bool = False) -> bool:
+    """Validate finite CIECAM02 correlates for the empirical proxy."""
     J, M, h = (float(value) for value in jmh)
     return (
         all(np.isfinite((J, M, h)))
-        and 0.0 <= J <= 100.0
-        and 0.0 <= M <= 100.0
+        and J >= 0.0
+        and M >= 0.0
         and 0.0 <= h <= 360.0
+        and (allow_extended or (J <= 100.0 and M <= 100.0))
     )
 
 
@@ -150,7 +151,13 @@ def _cam16_ucs(rgb, config: Config) -> np.ndarray:
     return coordinates
 
 
-def _empirical_cam02_ucs(target_rgb, surround_rgb, config: Config) -> np.ndarray:
+def _empirical_cam02_ucs(
+    target_rgb,
+    surround_rgb,
+    config: Config,
+    *,
+    allow_extended: bool = False,
+) -> np.ndarray:
     """Original surround-as-white-point proxy with corrected CAM parameters.
 
     The coloured surround deliberately supplies ``XYZ_w``. This is retained
@@ -165,7 +172,7 @@ def _empirical_cam02_ucs(target_rgb, surround_rgb, config: Config) -> np.ndarray
         surround=_empirical_viewing_condition(config),
     )
     jmh = np.asarray((spec.J, spec.M, spec.h), dtype=float)
-    if not _valid_empirical_jmh(jmh):
+    if not _valid_empirical_jmh(jmh, allow_extended=allow_extended):
         raise ValueError("Colour is outside the empirical CIECAM02 domain")
     coordinates = np.asarray(JMh_CIECAM02_to_CAM02UCS(jmh), dtype=float)
     if not np.all(np.isfinite(coordinates)):
@@ -333,7 +340,8 @@ def _rank_empirical_candidates(
     selected: list[_RankedCandidate] = []
     for item in ranked:
         if all(
-            delta_E_CAM02UCS(item.shifted_ucs, other.shifted_ucs) >= config.min_delta
+            _candidate_separation(item.shifted_ucs, other.shifted_ucs, objective)
+            >= config.min_delta
             for other in selected
         ):
             selected.append(item)
@@ -353,7 +361,7 @@ def find_empirical_maximal_surround_shift(
     settings = _settings(config)
     _validate_objective(objective)
     base, surround = _rgb_tuple(base_rgb), _rgb_tuple(initial_surround_rgb)
-    reference = _empirical_cam02_ucs(base, surround, settings)
+    reference = _empirical_cam02_ucs(base, surround, settings, allow_extended=True)
     candidates = _rank_empirical_candidates(
         lambda candidate: (_empirical_cam02_ucs(base, candidate, settings), reference),
         settings,

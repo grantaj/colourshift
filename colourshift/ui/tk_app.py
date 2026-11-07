@@ -34,7 +34,7 @@ class ColourShiftApp:
         self.root = root
         self.root.title("ColourShift")
         self.base_color = "#950000"
-        self.original_surround = "#964301"
+        self.original_surround = "#7c1332"
         self.min_delta = tk.DoubleVar(value=10.0)
         self.objective_mode = tk.StringVar(value=OBJECTIVE_CHROMATIC_LABEL)
         self.current_result = None
@@ -43,7 +43,7 @@ class ColourShiftApp:
         self.search_generation = 0
         self.presets = {
             "Select a preset": (None, None),
-            "0": ("#950000", "#964301"),
+            "0": ("#950000", "#7c1332"),
             "1": ("#8FD16A", "#2DA14E"),
             "2": ("#AE5FAD", "#C892C7"),
             "3": ("#326C36", "#273470"),

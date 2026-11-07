@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#111111" />
+  <title>ColourShift — design a colour shift</title>
+  <link rel="stylesheet" href="shift.css?v=13" />
+</head>
+<body>
+  <main class="app">
+    <header class="masthead">
+      <h1>ColourShift</h1>
+    </header>
+    <p id="file-warning" class="file-warning" hidden>Chrome blocks this app when opened as a file. Start a local server, then open <code>http://localhost:8000/</code>.</p>
+    <section id="results" class="results" aria-live="polite">
+      <article class="comparison">
+        <div class="swatches">
+          <div class="reference-editor" role="group" aria-label="Starting colour comparison">
+            <button class="reference-field" type="button" aria-label="Choose surrounding colour"></button>
+            <button class="reference-target" type="button" aria-label="Choose target colour"></button>
+          </div>
+          <div class="empty-result">Results update as you change the colours.</div>
+        </div>
+      </article>
+    </section>
+    <input id="target" class="colour-picker" type="color" value="#950000" aria-label="Target colour" />
+    <input id="surround" class="colour-picker" type="color" value="#7c1332" aria-label="Surrounding colour" />
+    <p class="paper-link"><a href="../paper/">Learn more</a></p>
+  </main>
+  <script>
+    if (window.location.protocol === "file:") document.querySelector("#file-warning").hidden = false;
+  </script>
+  <script type="module" src="app.js?v=22"></script>
+</body>
+</html>
