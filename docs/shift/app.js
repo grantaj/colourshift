@@ -1,9 +1,7 @@
-import { hexToRgb, rgbToHex, search } from "./colourshift-core.js?v=3";
+import { hexToRgb, rgbToHex, search } from "./colourshift-core.js?v=4";
 
 const target = document.querySelector("#target");
 const surround = document.querySelector("#surround");
-const minDelta = document.querySelector("#min-delta");
-const minDeltaValue = document.querySelector("#min-delta-value");
 const results = document.querySelector("#results");
 let searchTimer;
 
@@ -89,6 +87,8 @@ function renderResults(result, targetHex, startHex) {
       }
     });
     const choices = document.createElement("div"); choices.className = "candidate-choices";
+    const references = document.createElement("div");
+    references.className = "reference-choices";
     const targetChoice = document.createElement("button");
     targetChoice.type = "button";
     targetChoice.textContent = targetHex;
@@ -96,7 +96,15 @@ function renderResults(result, targetHex, startHex) {
     targetChoice.style.background = targetHex;
     targetChoice.setAttribute("aria-label", `Choose target colour: ${targetHex}`);
     targetChoice.addEventListener("click", () => openPicker(target));
-    choices.append(targetChoice);
+    const surroundChoice = document.createElement("button");
+    surroundChoice.type = "button";
+    surroundChoice.textContent = startHex;
+    surroundChoice.className = "candidate-choice surround-choice";
+    surroundChoice.style.background = startHex;
+    surroundChoice.setAttribute("aria-label", `Choose surrounding colour: ${startHex}`);
+    surroundChoice.addEventListener("click", () => openPicker(surround));
+    references.append(targetChoice, surroundChoice);
+    choices.append(references);
     const solutions = document.createElement("div");
     solutions.className = "solution-choices";
     for (const [choiceIndex, choice] of result.candidates.entries()) {
@@ -129,7 +137,7 @@ function run() {
   const targetHex = target.value.toLowerCase();
   const startHex = surround.value.toLowerCase();
   try {
-    const result = search("maximal-surround-shift", hexToRgb(targetHex), hexToRgb(startHex), { objective: "chromatic", gridPoints: 12, minDelta: Number(minDelta.value), maxCandidates: 3 });
+    const result = search("maximal-surround-shift", hexToRgb(targetHex), hexToRgb(startHex), { objective: "chromatic", gridPoints: 12, minDelta: 10, maxCandidates: 3 });
     renderResults(result, targetHex, startHex);
   } catch (error) {
     console.error("ColourShift search failed", error);
@@ -145,5 +153,4 @@ for (const editor of document.querySelectorAll(".reference-editor")) bindReferen
 target.addEventListener("input", () => { updateReference(); scheduleSearch(); });
 surround.addEventListener("input", () => { updateReference(); scheduleSearch(); });
 updateReference();
-minDelta.addEventListener("input", () => { minDeltaValue.value = minDelta.value; scheduleSearch(); });
 scheduleSearch();

@@ -340,7 +340,8 @@ def _rank_empirical_candidates(
     selected: list[_RankedCandidate] = []
     for item in ranked:
         if all(
-            delta_E_CAM02UCS(item.shifted_ucs, other.shifted_ucs) >= config.min_delta
+            _candidate_separation(item.shifted_ucs, other.shifted_ucs, objective)
+            >= config.min_delta
             for other in selected
         ):
             selected.append(item)

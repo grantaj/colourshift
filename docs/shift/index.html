@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#111111" />
   <title>ColourShift — design a colour shift</title>
-  <link rel="stylesheet" href="shift.css?v=9" />
+  <link rel="stylesheet" href="shift.css?v=13" />
 </head>
 <body>
   <main class="app">
@@ -24,19 +24,13 @@
         </div>
       </article>
     </section>
-    <section class="controls" aria-label="ColourShift controls">
-      <input id="target" class="colour-picker" type="color" value="#950000" aria-label="Target colour" />
-      <input id="surround" class="colour-picker" type="color" value="#005ce7" aria-label="Surrounding colour" />
-      <label class="separation" for="min-delta">
-        <span>Minimum result separation <output id="min-delta-value" for="min-delta">10</output></span>
-        <input id="min-delta" type="range" min="0" max="100" step="1" value="10" />
-      </label>
-    </section>
-    <p class="paper-link"><a href="../paper/">Read the technical write-up</a></p>
+    <input id="target" class="colour-picker" type="color" value="#950000" aria-label="Target colour" />
+    <input id="surround" class="colour-picker" type="color" value="#7c1332" aria-label="Surrounding colour" />
+    <p class="paper-link"><a href="../paper/">Learn more</a></p>
   </main>
   <script>
     if (window.location.protocol === "file:") document.querySelector("#file-warning").hidden = false;
   </script>
-  <script type="module" src="app.js?v=19"></script>
+  <script type="module" src="app.js?v=22"></script>
 </body>
 </html>

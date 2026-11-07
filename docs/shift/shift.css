@@ -4,18 +4,13 @@ body { margin: 0; min-height: 100vh; background: #f6f6f6; }
 .app { width: min(1100px, 92vw); margin: 0 auto; padding: clamp(1.5rem, 4vw, 3rem) 0 4rem; }
 .masthead { margin-bottom: 1.25rem; }
 h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 650; letter-spacing: -.04em; }
-.controls { display: grid; max-width: 34rem; margin: 1rem 0 2rem; }
-label { display: grid; gap: .55rem; color: #5c5c5c; font-size: .88rem; }
 .colour-picker { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .reference-editor { position: relative; min-height: clamp(12rem, 28vw, 19rem); overflow: hidden; }
 .reference-field { position: absolute; inset: 0; width: 100%; border: 0; border-radius: 0; padding: 0; }
-.reference-target { position: absolute; top: 50%; left: 50%; width: clamp(5rem, 16vw, 10rem); aspect-ratio: 1; min-height: 0; transform: translate(-50%, -50%); border: 0; border-radius: .35rem; padding: 0; box-shadow: 0 0 0 1px #ffffff33; }
-input[type=range] { width: 100%; accent-color: #777; }
+.reference-target { position: absolute; top: 50%; left: 50%; width: clamp(6rem, 13vw, 10rem); aspect-ratio: 1; min-height: 0; transform: translate(-50%, -50%); border: 0; border-radius: .35rem; padding: 0; }
 select, button { width: 100%; min-height: 3.25rem; border: 1px solid #c8c8c8; border-radius: .35rem; background: #fff; color: inherit; padding: .75rem 1rem; font: inherit; }
 button { cursor: pointer; background: #303030; border-color: #303030; color: #fff; font-weight: 650; }
 button:hover { background: #4a4a4a; }
-.separation span { display: flex; justify-content: space-between; }
-.separation output { color: #211e1a; font-variant-numeric: tabular-nums; }
 .results { max-width: 980px; }
 .hint { color: #727272; }
 .comparison { min-height: min(62vh, 42rem); border-radius: .45rem; overflow: hidden; background: #fff; border: 1px solid #d2d2d2; display: grid; }
@@ -23,7 +18,7 @@ button:hover { background: #4a4a4a; }
 .swatches { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: min(56vh, 36rem); }
 .swatch { display: grid; min-width: 0; place-items: center; }
 .empty-result { display: grid; place-items: center; padding: 2rem; background: #fff; color: #727272; text-align: center; }
-.chip { width: clamp(6rem, 13vw, 10rem); height: clamp(6rem, 13vw, 10rem); border-radius: .35rem; box-shadow: 0 0 0 1px #ffffff33; }
+.chip { width: clamp(6rem, 13vw, 10rem); height: clamp(6rem, 13vw, 10rem); border-radius: .35rem; }
 .comparison p { margin: 0; padding: .9rem 1rem 1rem; color: #5c5c5c; font-size: .95rem; }
 .comparison strong { color: #1c1c1c; }
 .comparison:fullscreen {
@@ -43,6 +38,7 @@ button:hover { background: #4a4a4a; }
 .result-controls { display: flex; align-items: flex-start; gap: 1rem; margin-top: .75rem; }
 .result-controls .fullscreen { width: auto; min-width: 7rem; margin-left: auto; flex: 0 0 auto; }
 .candidate-choices { display: flex; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; align-items: flex-start; gap: 1.5rem; }
+.reference-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
 .solution-choices { display: flex; flex-wrap: wrap; gap: .5rem; }
 .solution-choice { display: grid; gap: .35rem; justify-items: start; }
 .candidate-choice { width: auto; min-width: 6rem; min-height: 2.5rem; border-color: #777; color: #fff; text-shadow: 0 1px 2px #000; }

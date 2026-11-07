@@ -121,7 +121,7 @@ export function search(mode, baseRgb, surroundRgb, options = {}) {
   }).filter((item) => item && Number.isFinite(item.totalShift) && Number.isFinite(item.chromaticShift)).sort((a, b) => (b[objective === OBJECTIVE_CHROMATIC ? "chromaticShift" : "totalShift"] - a[objective === OBJECTIVE_CHROMATIC ? "chromaticShift" : "totalShift"]) || rgbToHex(a.rgb).localeCompare(rgbToHex(b.rgb)));
   const candidates = [];
   for (const item of scored) {
-    if (candidates.every((other) => distance(item.shifted, other.shifted, OBJECTIVE_TOTAL) >= config.minDelta && rgbDistance(item.rgb, other.rgb) >= config.minRgbDelta)) candidates.push(item);
+    if (candidates.every((other) => distance(item.shifted, other.shifted, objective) >= config.minDelta && rgbDistance(item.rgb, other.rgb) >= config.minRgbDelta)) candidates.push(item);
     if (candidates.length >= config.maxCandidates) break;
   }
   return { schema: "colourshift-search-result-v1", model: MODEL_ID, mode, objective, config, inputs: { base: baseRgb, surround: surroundRgb }, candidates: candidates.map(({ rgb, totalShift, chromaticShift }) => ({ rgb, hex: rgbToHex(rgb), total_shift: totalShift, chromatic_shift: chromaticShift })) };

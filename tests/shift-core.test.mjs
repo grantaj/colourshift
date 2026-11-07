@@ -34,7 +34,7 @@ test("minimum separation selects distinct result sets", () => {
   assert.notDeepEqual(lowSeparation.candidates, highSeparation.candidates);
 });
 
-test("browser search matches the Tk empirical proxy ranking", () => {
+test("browser search keeps chromatically separated candidates", () => {
   const result = search(
     "maximal-surround-shift",
     hexToRgb("#950000"),
@@ -45,7 +45,7 @@ test("browser search matches the Tk empirical proxy ranking", () => {
   assert.deepEqual(result.candidates.map((candidate) => candidate.hex), [
     "#8b00ff",
     "#005ce7",
-    "#175ce7",
+    "#8b17ff",
   ]);
 });
 
