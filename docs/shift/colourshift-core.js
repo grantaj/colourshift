@@ -79,7 +79,7 @@ function ciecam02(rgb, backgroundRgb, config = {}) {
   const t = (50000 / 13 * Nc * Ncb * et * Math.sqrt(a * a + b * b)) / (R + G + 21 * B / 20);
   const C = signedPower(t, 0.9) * signedPower(J / 100, 0.5) * (1.64 - 0.29 ** n) ** 0.73;
   const M = C * FL ** 0.25;
-  if (![J, M, h].every(Number.isFinite) || J < 0 || J > 100 || M < 0 || M > 100) return null;
+  if (![J, M, h].every(Number.isFinite) || J < 0 || M < 0 || (!config.allowExtendedAppearance && (J > 100 || M > 100))) return null;
   const Jp = 1.7 * J / (1 + 0.007 * J);
   const Mp = Math.log1p(0.0228 * M) / 0.0228;
   return [Jp, Mp * Math.cos(h * Math.PI / 180), Mp * Math.sin(h * Math.PI / 180)];
@@ -111,7 +111,9 @@ export function search(mode, baseRgb, surroundRgb, options = {}) {
   const reference = mode === "strongest-surrounds" ? appearanceCoordinates(baseRgb, baseRgb, config) : null;
   const scored = grid(config.gridPoints).map((candidate) => {
     const shifted = mode === "sensitive-bases" ? appearanceCoordinates(candidate, surroundRgb, config) : appearanceCoordinates(baseRgb, candidate, config);
-    const baseline = mode === "sensitive-bases" ? appearanceCoordinates(candidate, candidate, config) : (reference ?? appearanceCoordinates(baseRgb, surroundRgb, config));
+    const baseline = mode === "sensitive-bases"
+      ? appearanceCoordinates(candidate, candidate, config)
+      : (reference ?? appearanceCoordinates(baseRgb, surroundRgb, { ...config, allowExtendedAppearance: true }));
     if (!shifted || !baseline) return null;
     const totalShift = distance(shifted, baseline, OBJECTIVE_TOTAL);
     const chromaticShift = distance(shifted, baseline, OBJECTIVE_CHROMATIC);

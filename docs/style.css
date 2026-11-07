@@ -54,6 +54,10 @@ body {
   color: var(--muted);
 }
 
+.project-link {
+  margin: 1rem 0 0;
+}
+
 .abstract,
 .toc {
   margin: 0 0 2rem;

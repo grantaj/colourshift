@@ -48,3 +48,13 @@ test("browser search matches the Tk empirical proxy ranking", () => {
     "#175ce7",
   ]);
 });
+
+test("search supports a light target on a darker surround", () => {
+  const result = search(
+    "maximal-surround-shift",
+    hexToRgb("#f1de35"),
+    hexToRgb("#e8791c"),
+    { objective: "chromatic", gridPoints: 12, maxCandidates: 3, minDelta: 10 },
+  );
+  assert.ok(result.candidates.length > 0);
+});

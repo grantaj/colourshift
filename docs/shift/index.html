@@ -5,24 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#111111" />
   <title>ColourShift — design a colour shift</title>
-  <link rel="stylesheet" href="shift.css?v=3" />
+  <link rel="stylesheet" href="shift.css?v=9" />
 </head>
 <body>
   <main class="app">
     <header class="masthead">
-      <p class="eyebrow">ColourShift</p>
-      <h1>Make one colour look different.</h1>
-      <p class="lede">Choose a target colour and a starting surround, then explore alternative surrounds predicted to change its hue and chroma most strongly.</p>
+      <h1>ColourShift</h1>
     </header>
-    <section class="controls" aria-label="ColourShift controls">
-      <input id="target" class="colour-picker" type="color" value="#950000" aria-label="Target colour" />
-      <input id="surround" class="colour-picker" type="color" value="#964301" aria-label="Surrounding colour" />
-      <label class="separation" for="min-delta">
-        <span>Minimum result separation <output id="min-delta-value" for="min-delta">10</output></span>
-        <input id="min-delta" type="range" min="0" max="100" step="1" value="10" />
-      </label>
-      <button id="search" type="button">Go</button>
-    </section>
     <p id="file-warning" class="file-warning" hidden>Chrome blocks this app when opened as a file. Start a local server, then open <code>http://localhost:8000/</code>.</p>
     <section id="results" class="results" aria-live="polite">
       <article class="comparison">
@@ -31,16 +20,23 @@
             <button class="reference-field" type="button" aria-label="Choose surrounding colour"></button>
             <button class="reference-target" type="button" aria-label="Choose target colour"></button>
           </div>
-          <div class="empty-result">Choose the reference colours, then run a search.</div>
+          <div class="empty-result">Results update as you change the colours.</div>
         </div>
-        <p>Click the left field or patch to choose its colour.</p>
       </article>
     </section>
-    <details class="about"><summary>About this experiment</summary><p>ColourShift is a model-driven exploration, not a guarantee that every observer, display, or lighting environment will see the same magnitude of change. The browser calculation uses ColourShift’s corrected empirical CIECAM02 white-point proxy: the chosen surround acts as the local reference field, with explicit viewing-condition parameters. It is a studio-search heuristic, not a calibrated observer model.</p></details>
+    <section class="controls" aria-label="ColourShift controls">
+      <input id="target" class="colour-picker" type="color" value="#950000" aria-label="Target colour" />
+      <input id="surround" class="colour-picker" type="color" value="#005ce7" aria-label="Surrounding colour" />
+      <label class="separation" for="min-delta">
+        <span>Minimum result separation <output id="min-delta-value" for="min-delta">10</output></span>
+        <input id="min-delta" type="range" min="0" max="100" step="1" value="10" />
+      </label>
+    </section>
+    <p class="paper-link"><a href="../paper/">Read the technical write-up</a></p>
   </main>
   <script>
     if (window.location.protocol === "file:") document.querySelector("#file-warning").hidden = false;
   </script>
-  <script type="module" src="app.js?v=12"></script>
+  <script type="module" src="app.js?v=19"></script>
 </body>
 </html>

@@ -89,6 +89,17 @@ def test_empirical_proxy_rejects_out_of_domain_ciecam02_correlates(monkeypatch):
         )
 
 
+def test_empirical_maximal_search_supports_light_target_on_darker_surround():
+    result = algorithms.find_empirical_maximal_surround_shift(
+        (0xF1 / 255, 0xDE / 255, 0x35 / 255),
+        (0xE8 / 255, 0x79 / 255, 0x1C / 255),
+        config=Config(rgb_grid_points=12, min_delta=10, max_candidates=3),
+        objective=algorithms.OBJECTIVE_CHROMATIC,
+    )
+
+    assert result.candidates
+
+
 def test_published_2019_correction_equations():
     delta = 20.0
     assert algorithms._lightness_contrast_correction(delta) == pytest.approx(
