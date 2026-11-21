@@ -52,7 +52,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=3"/);
-  assert.match(html, /src="watercolour\.js\?v=8"/);
+  assert.match(html, /src="watercolour\.js\?v=9"/);
 });
 
 
@@ -128,4 +128,14 @@ test("explorer exposes crenellation shape while preserving current geometry at 0
   assert.match(geometry, /function cardinalSpline/);
   assert.match(geometry, /crenellationShape = 0\.5/);
   assert.match(geometry, /tangentScale/);
+});
+
+
+test("explorer cache-busts the geometry module used by crenellation controls", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /from "\.\/geometry\.mjs\?v=2"/);
 });
