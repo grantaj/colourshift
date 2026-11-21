@@ -23,6 +23,7 @@ const LIMITS = Object.freeze({
   ribbonWidth: [2, 12],
   amplitude: [0, 35],
   waves: [2, 30],
+  crenellationShape: [0.25, 1.25],
 });
 
 const PRESETS = Object.freeze({
@@ -43,6 +44,7 @@ const DEFAULT_STATE = Object.freeze({
   ribbonWidth: 8,
   amplitude: 15,
   waves: 12,
+  crenellationShape: 0.5,
   innerColour: PRESETS.blueGreen.innerColour,
   outerColour: PRESETS.blueGreen.outerColour,
 });
@@ -63,12 +65,14 @@ const elements = {
   ribbonWidth: document.getElementById("ribbon-width"),
   amplitude: document.getElementById("amplitude"),
   waves: document.getElementById("waves"),
+  crenellationShape: document.getElementById("crenellation-shape"),
   radiusValue: document.getElementById("radius-value"),
   fieldWidthValue: document.getElementById("field-width-value"),
   shapeValue: document.getElementById("shape-value"),
   ribbonWidthValue: document.getElementById("ribbon-width-value"),
   amplitudeValue: document.getElementById("amplitude-value"),
   wavesValue: document.getElementById("waves-value"),
+  crenellationShapeValue: document.getElementById("crenellation-shape-value"),
   innerColour: document.getElementById("inner-colour"),
   outerColour: document.getElementById("outer-colour"),
   innerHex: document.getElementById("inner-hex"),
@@ -98,6 +102,11 @@ function clampState() {
   );
   state.waves = Math.round(
     clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
+  );
+  state.crenellationShape = clamp(
+    Number(state.crenellationShape),
+    LIMITS.crenellationShape[0],
+    LIMITS.crenellationShape[1],
   );
 
   const minimumFactor = minimumShapeFactor(state.shape);
@@ -184,6 +193,7 @@ function syncControlsFromState() {
   elements.ribbonWidth.value = String(state.ribbonWidth);
   elements.amplitude.value = String(state.amplitude);
   elements.waves.value = String(state.waves);
+  elements.crenellationShape.value = String(state.crenellationShape);
 
   elements.innerColour.value = state.innerColour;
   elements.outerColour.value = state.outerColour;
@@ -198,6 +208,17 @@ function syncControlsFromState() {
   elements.shapeValue.value = shapeLabel(state.shape);
   elements.ribbonWidthValue.value = formatValue(state.ribbonWidth, 0);
   elements.amplitudeValue.value = formatValue(state.amplitude, 0);
+
+  const shapeOffset = state.crenellationShape - 0.5;
+  const shapeLabel =
+    Math.abs(shapeOffset) < 0.005
+      ? "Current · 0.50"
+      : state.crenellationShape < 0.5
+        ? "Sharper · " + formatValue(state.crenellationShape, 2)
+        : state.crenellationShape <= 1
+          ? "Rounder · " + formatValue(state.crenellationShape, 2)
+          : "Scalloped · " + formatValue(state.crenellationShape, 2);
+  elements.crenellationShapeValue.value = shapeLabel;
 
   const count = 4096;
   const arcMap = buildArcLengthMap(state.shape, count);
@@ -237,6 +258,7 @@ function render() {
     outerWaves,
     state.shape,
     arcFractions,
+    state.crenellationShape,
   );
   const innerFieldLocal = sampleBoundary(
     innerFieldRadius,
@@ -244,6 +266,7 @@ function render() {
     innerWaves,
     state.shape,
     arcFractions,
+    state.crenellationShape,
   );
 
   const outerField = translatePoints(outerFieldLocal, CENTRE, CENTRE);
@@ -364,7 +387,7 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 4,
+    version: 5,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
@@ -374,6 +397,7 @@ function exportMetadata() {
     ribbonWidth: state.ribbonWidth,
     amplitude: state.amplitude,
     outerWaves: state.waves,
+    crenellationShape: state.crenellationShape,
     innerWaves: Math.max(
       1,
       Math.round(
@@ -473,6 +497,7 @@ bindRange(elements.shape, "shape");
 bindRange(elements.ribbonWidth, "ribbonWidth");
 bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
+bindRange(elements.crenellationShape, "crenellationShape");
 
 bindColourPicker(
   elements.innerColour,

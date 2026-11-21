@@ -87,6 +87,21 @@
             </div>
             <input id="waves" type="range" min="2" max="30" step="1" value="12" />
           </div>
+
+          <div class="control">
+            <div class="control-heading control-heading-stacked">
+              <label for="crenellation-shape">Crenellation shape</label>
+              <output id="crenellation-shape-value" for="crenellation-shape"></output>
+            </div>
+            <input
+              id="crenellation-shape"
+              type="range"
+              min="0.25"
+              max="1.25"
+              step="0.01"
+              value="0.50"
+            />
+          </div>
         </fieldset>
 
         <fieldset>
@@ -159,6 +174,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=7"></script>
+  <script type="module" src="watercolour.js?v=8"></script>
 </body>
 </html>
