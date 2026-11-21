@@ -52,7 +52,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=3"/);
-  assert.match(html, /src="watercolour\.js\?v=6"/);
+  assert.match(html, /src="watercolour\.js\?v=7"/);
 });
 
 
@@ -73,28 +73,6 @@ test("explorer renders ribbons as layered strokes rather than offset polygons", 
   assert.match(js, /2 \* w/);
 });
 
-test("fractional wave counts blend adjacent periodic waveforms smoothly", async () => {
-  const geometry = await readFile(
-    new URL("../docs/watercolour/geometry.mjs", import.meta.url),
-    "utf8",
-  );
-  const html = await readFile(
-    new URL("../docs/watercolour/index.html", import.meta.url),
-    "utf8",
-  );
-  const js = await readFile(
-    new URL("../docs/watercolour/watercolour.js", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(html, /id="waves"[^>]*step="0\.05"/);
-  assert.match(geometry, /Math\.floor\(waves\)/);
-  assert.match(geometry, /Math\.ceil\(waves\)/);
-  assert.match(geometry, /\(1 - blend\) \* lowerWave \+ blend \* upperWave/);
-  assert.match(js, /const count = 4096/);
-  assert.ok(!js.includes("Math.round(\n    clamp(Number(state.waves)"));
-});
-
 
 test("inner and outer boundaries share approximately one physical wavelength", async () => {
   const js = await readFile(
@@ -105,8 +83,26 @@ test("inner and outer boundaries share approximately one physical wavelength", a
   assert.match(js, /const outerWaves = state\.waves/);
   assert.match(
     js,
-    /const innerWaves = state\.waves \* \(innerFieldRadius \/ outerFieldRadius\)/,
+    /Math\.round\(state\.waves \* \(innerFieldRadius \/ outerFieldRadius\)\)/,
   );
   assert.match(js, /sampleBoundary\([\s\S]*outerWaves/);
   assert.match(js, /sampleBoundary\([\s\S]*innerWaves/);
+});
+
+
+test("crenellation uses a single pure sinusoid at each wavelength", async () => {
+  const geometry = await readFile(
+    new URL("../docs/watercolour/geometry.mjs", import.meta.url),
+    "utf8",
+  );
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(geometry, /Math\.cos\(wavePhase\)/);
+  assert.ok(!geometry.includes("lowerWave"));
+  assert.ok(!geometry.includes("upperWave"));
+  assert.ok(!geometry.includes("blend"));
+  assert.match(html, /id="waves"[^>]*step="1"/);
 });
