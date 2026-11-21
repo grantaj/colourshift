@@ -7,7 +7,7 @@ import {
   sampleBoundary,
   closedPath,
   translatePoints,
-} from "./geometry.mjs?v=3";
+} from "./geometry.mjs?v=4";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const VIEWBOX_SIZE = 760;
@@ -19,7 +19,7 @@ const MAX_EXTENT = CENTRE - EDGE_MARGIN;
 const LIMITS = Object.freeze({
   radius: [150, 240],
   fieldWidth: [50, 150],
-  shape: [0, 2],
+  shape: [0, 1],
   ribbonWidth: [2, 12],
   amplitude: [0, 35],
   waves: [2, 30],
@@ -162,16 +162,10 @@ function shapeLabel(shape) {
   if (shape <= 0.01) {
     return "Circle";
   }
-  if (Math.abs(shape - 1) <= 0.01) {
+  if (shape >= 0.99) {
     return "Square";
   }
-  if (shape >= 1.99) {
-    return "Greek cross";
-  }
-  if (shape < 1) {
-    return "Circle → square · " + Math.round(shape * 100) + "%";
-  }
-  return "Square → cross · " + Math.round((shape - 1) * 100) + "%";
+  return "Circle → square · " + Math.round(shape * 100) + "%";
 }
 
 function activePresetName() {
@@ -385,7 +379,7 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 6,
+    version: 7,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,

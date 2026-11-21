@@ -5,21 +5,24 @@ import test from "node:test";
 import {
   buildArcLengthMap,
   closedPath,
-  greekCrossRadiusFactor,
   minimumShapeFactor,
+  superellipseRadiusFactor,
 } from "../docs/watercolour/geometry.mjs";
 
-test("Greek cross has axial arms and recessed diagonals", () => {
-  const axial = greekCrossRadiusFactor(0);
-  const diagonal = greekCrossRadiusFactor(Math.PI / 4);
+test("shape family runs smoothly from circle to rounded square", () => {
+  const circleAxis = superellipseRadiusFactor(0, 0);
+  const circleDiagonal = superellipseRadiusFactor(Math.PI / 4, 0);
+  const squareAxis = superellipseRadiusFactor(0, 1);
+  const squareDiagonal = superellipseRadiusFactor(Math.PI / 4, 1);
 
-  assert.ok(axial > diagonal);
-  assert.ok(axial > 0.8);
-  assert.ok(diagonal < 0.6);
+  assert.ok(Math.abs(circleAxis - 1) < 1e-12);
+  assert.ok(Math.abs(circleDiagonal - 1) < 1e-12);
+  assert.ok(squareDiagonal > squareAxis);
+  assert.ok(squareAxis > 0.8);
 });
 
 test("arc-length map is monotone and closes one normalized perimeter", () => {
-  const map = buildArcLengthMap(2, 4096);
+  const map = buildArcLengthMap(1, 4096);
 
   assert.ok(map.perimeterFactor > 0);
   assert.equal(map.fractions[0], 0);
@@ -52,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=4"/);
-  assert.match(html, /src="watercolour\.js\?v=10"/);
+  assert.match(html, /src="watercolour\.js\?v=11"/);
 });
 
 
@@ -151,6 +154,28 @@ test("explorer cache-busts geometry and mobile sliders leave scroll gutters", as
     "utf8",
   );
 
-  assert.match(js, /from "\.\/geometry\.mjs\?v=3"/);
+  assert.match(js, /from "\.\/geometry\.mjs\?v=4"/);
   assert.match(css, /@media \(max-width: 560px\)[\s\S]*input\[type="range"\][\s\S]*width: 76%/);
+});
+
+
+test("shape slider is limited to the smooth circle-square family", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+  const geometry = await readFile(
+    new URL("../docs/watercolour/geometry.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /id="shape"[^>]*max="1"/);
+  assert.match(js, /shape: \[0, 1\]/);
+  assert.ok(!geometry.includes("greekCrossRadiusFactor"));
+  assert.ok(!geometry.includes("GREEK_CROSS"));
+  assert.match(geometry, /exponent = 2 \+ 2 \* t/);
 });
