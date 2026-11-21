@@ -223,17 +223,20 @@ function render() {
   const arcMap = buildArcLengthMap(state.shape, count);
   const arcFractions = arcMap.fractions;
 
+  const outerWaves = state.waves;
+  const innerWaves = state.waves * (innerFieldRadius / outerFieldRadius);
+
   const outerFieldLocal = sampleBoundary(
     outerFieldRadius,
     state.amplitude,
-    state.waves,
+    outerWaves,
     state.shape,
     arcFractions,
   );
   const innerFieldLocal = sampleBoundary(
     innerFieldRadius,
     state.amplitude,
-    state.waves,
+    innerWaves,
     state.shape,
     arcFractions,
   );
@@ -365,7 +368,8 @@ function exportMetadata() {
     innerFieldRadius: state.radius - state.fieldWidth,
     ribbonWidth: state.ribbonWidth,
     amplitude: state.amplitude,
-    waves: state.waves,
+    outerWaves: state.waves,
+    innerWaves: state.waves * ((state.radius - state.fieldWidth) / state.radius),
     innerColour: state.innerColour,
     outerColour: state.outerColour,
     fieldColour: "#ffffff",
