@@ -96,7 +96,9 @@ function clampState() {
     LIMITS.amplitude[0],
     LIMITS.amplitude[1],
   );
-  state.waves = clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]);
+  state.waves = Math.round(
+    clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
+  );
 
   const minimumFactor = minimumShapeFactor(state.shape);
   const innerClearance =
@@ -224,7 +226,10 @@ function render() {
   const arcFractions = arcMap.fractions;
 
   const outerWaves = state.waves;
-  const innerWaves = state.waves * (innerFieldRadius / outerFieldRadius);
+  const innerWaves = Math.max(
+    1,
+    Math.round(state.waves * (innerFieldRadius / outerFieldRadius)),
+  );
 
   const outerFieldLocal = sampleBoundary(
     outerFieldRadius,
