@@ -53,6 +53,10 @@ const state = { ...DEFAULT_STATE };
 const OKLAB_RANGE = 0.25;
 let selectedColourKey = "innerColour";
 let renderedPlaneLightness = null;
+const fixedColourLightness = {
+  innerColour: null,
+  outerColour: null,
+};
 
 function srgbChannelToLinear(channel) {
   return channel <= 0.04045
@@ -146,10 +150,16 @@ function colourLab(key) {
   return rgbToOklab(hexToRgb(state[key]));
 }
 
+function syncFixedColourLightness() {
+  fixedColourLightness.innerColour = colourLab("innerColour").L;
+  fixedColourLightness.outerColour = colourLab("outerColour").L;
+}
+
 function drawColourPlane(force = false) {
   const lab = colourLab(selectedColourKey);
+  const lightness = fixedColourLightness[selectedColourKey] ?? lab.L;
   if (!force && renderedPlaneLightness !== null &&
-      Math.abs(renderedPlaneLightness - lab.L) < 0.0005) {
+      Math.abs(renderedPlaneLightness - lightness) < 0.0005) {
     return;
   }
 
@@ -161,7 +171,7 @@ function drawColourPlane(force = false) {
     const b = OKLAB_RANGE * (1 - 2 * y / (canvas.height - 1));
     for (let x = 0; x < canvas.width; x += 1) {
       const a = OKLAB_RANGE * (2 * x / (canvas.width - 1) - 1);
-      const rgb = gamutMappedOklab(lab.L, a, b);
+      const rgb = gamutMappedOklab(lightness, a, b);
       const offset = 4 * (y * canvas.width + x);
       image.data[offset] = Math.round(clamp(rgb[0], 0, 1) * 255);
       image.data[offset + 1] = Math.round(clamp(rgb[1], 0, 1) * 255);
@@ -171,7 +181,7 @@ function drawColourPlane(force = false) {
   }
 
   context.putImageData(image, 0, 0);
-  renderedPlaneLightness = lab.L;
+  renderedPlaneLightness = lightness;
 }
 
 function updateColourPlaneMarker() {
@@ -213,7 +223,8 @@ function setColourFromPlaneEvent(event) {
   const y = clamp((event.clientY - rect.top) / rect.height, 0, 1);
   const a = OKLAB_RANGE * (2 * x - 1);
   const b = OKLAB_RANGE * (1 - 2 * y);
-  const L = colourLab(selectedColourKey).L;
+  const L = fixedColourLightness[selectedColourKey] ??
+    colourLab(selectedColourKey).L;
   state[selectedColourKey] = rgbToHex(gamutMappedOklab(L, a, b));
   render();
 }
@@ -484,6 +495,7 @@ function bindRange(element, key) {
 function applyPreset(preset) {
   state.innerColour = preset.innerColour;
   state.outerColour = preset.outerColour;
+  syncFixedColourLightness();
   renderedPlaneLightness = null;
   render();
 }
@@ -523,6 +535,8 @@ function syncFocusMode() {
 
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
+  syncFixedColourLightness();
+  renderedPlaneLightness = null;
   render();
 }
 
@@ -641,6 +655,7 @@ bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
 bindRange(elements.crenellationShape, "crenellationShape");
 
+syncFixedColourLightness();
 bindColourPlane();
 elements.editInner.addEventListener("click", function () {
   selectColour("innerColour");
