@@ -57,6 +57,10 @@ const fixedColourLightness = {
   innerColour: null,
   outerColour: null,
 };
+const colourPlanePosition = {
+  innerColour: null,
+  outerColour: null,
+};
 
 function srgbChannelToLinear(channel) {
   return channel <= 0.04045
@@ -155,6 +159,16 @@ function syncFixedColourLightness() {
   fixedColourLightness.outerColour = colourLab("outerColour").L;
 }
 
+function syncPlanePositionsFromColours() {
+  for (const key of ["innerColour", "outerColour"]) {
+    const lab = colourLab(key);
+    colourPlanePosition[key] = {
+      x: clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1),
+      y: clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1),
+    };
+  }
+}
+
 function drawColourPlane(force = false) {
   const lab = colourLab(selectedColourKey);
   const lightness = fixedColourLightness[selectedColourKey] ?? lab.L;
@@ -190,10 +204,17 @@ function setColourPlaneMarkerPosition(x, y) {
 }
 
 function updateColourPlaneMarker() {
+  const position = colourPlanePosition[selectedColourKey];
+  if (position !== null) {
+    setColourPlaneMarkerPosition(position.x, position.y);
+    return;
+  }
+
   const lab = colourLab(selectedColourKey);
-  const x = clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1);
-  const y = clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1);
-  setColourPlaneMarkerPosition(x, y);
+  setColourPlaneMarkerPosition(
+    clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1),
+    clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1),
+  );
 }
 
 function syncColourDock() {
@@ -244,6 +265,7 @@ function setColourFromPlaneEvent(event) {
   const b = OKLAB_RANGE * (1 - 2 * y);
   const L = fixedColourLightness[selectedColourKey] ??
     colourLab(selectedColourKey).L;
+  colourPlanePosition[selectedColourKey] = { x, y };
   setColourPlaneMarkerPosition(x, y);
   state[selectedColourKey] = rgbToHex(gamutMappedOklab(L, a, b));
   render();
@@ -518,6 +540,7 @@ function applyPreset(preset) {
   state.innerColour = preset.innerColour;
   state.outerColour = preset.outerColour;
   syncFixedColourLightness();
+  syncPlanePositionsFromColours();
   renderedPlaneLightness = null;
   render();
 }
@@ -558,6 +581,7 @@ function syncFocusMode() {
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
   syncFixedColourLightness();
+  syncPlanePositionsFromColours();
   renderedPlaneLightness = null;
   render();
 }
@@ -678,6 +702,7 @@ bindRange(elements.waves, "waves");
 bindRange(elements.crenellationShape, "crenellationShape");
 
 syncFixedColourLightness();
+syncPlanePositionsFromColours();
 bindColourPlane();
 elements.colourLightness.addEventListener("input", function () {
   setSelectedLightness(elements.colourLightness.value);
