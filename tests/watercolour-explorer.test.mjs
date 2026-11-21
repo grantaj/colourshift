@@ -94,3 +94,19 @@ test("fractional wave counts blend adjacent periodic waveforms smoothly", async 
   assert.match(js, /const count = 4096/);
   assert.ok(!js.includes("Math.round(\n    clamp(Number(state.waves)"));
 });
+
+
+test("inner and outer boundaries share approximately one physical wavelength", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /const outerWaves = state\.waves/);
+  assert.match(
+    js,
+    /const innerWaves = state\.waves \* \(innerFieldRadius \/ outerFieldRadius\)/,
+  );
+  assert.match(js, /sampleBoundary\([\s\S]*outerWaves/);
+  assert.match(js, /sampleBoundary\([\s\S]*innerWaves/);
+});
