@@ -172,16 +172,22 @@ function normalAtArcFraction(shape, arcFractions, fraction, step) {
   return [ty / length, -tx / length];
 }
 
-function catmullRom(p0, p1, p2, p3, t) {
+function cardinalSpline(p0, p1, p2, p3, t, tangentScale) {
   const t2 = t * t;
   const t3 = t2 * t;
+  const h00 = 2 * t3 - 3 * t2 + 1;
+  const h10 = t3 - 2 * t2 + t;
+  const h01 = -2 * t3 + 3 * t2;
+  const h11 = t3 - t2;
 
   return [0, 1].map(function (axis) {
-    return 0.5 * (
-      2 * p1[axis] +
-      (-p0[axis] + p2[axis]) * t +
-      (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t2 +
-      (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t3
+    const m1 = tangentScale * (p2[axis] - p0[axis]);
+    const m2 = tangentScale * (p3[axis] - p1[axis]);
+    return (
+      h00 * p1[axis] +
+      h10 * m1 +
+      h01 * p2[axis] +
+      h11 * m2
     );
   });
 }
@@ -192,6 +198,7 @@ export function sampleBoundary(
   waves,
   shape,
   arcFractions,
+  crenellationShape = 0.5,
 ) {
   const waveCount = Math.max(1, Math.round(waves));
   const controlCount = 2 * waveCount;
@@ -226,7 +233,16 @@ export function sampleBoundary(
     const p1 = controls[segment % controlCount];
     const p2 = controls[(segment + 1) % controlCount];
     const p3 = controls[(segment + 2) % controlCount];
-    points.push(catmullRom(p0, p1, p2, p3, t));
+    points.push(
+      cardinalSpline(
+        p0,
+        p1,
+        p2,
+        p3,
+        t,
+        crenellationShape,
+      ),
+    );
   }
 
   return points;
