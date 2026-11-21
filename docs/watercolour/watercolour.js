@@ -96,7 +96,9 @@ function clampState() {
     LIMITS.amplitude[0],
     LIMITS.amplitude[1],
   );
-  state.waves = clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]);
+  state.waves = Math.round(
+    clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
+  );
 
   const minimumFactor = minimumShapeFactor(state.shape);
   const innerClearance =
@@ -223,17 +225,23 @@ function render() {
   const arcMap = buildArcLengthMap(state.shape, count);
   const arcFractions = arcMap.fractions;
 
+  const outerWaves = state.waves;
+  const innerWaves = Math.max(
+    1,
+    Math.round(state.waves * (innerFieldRadius / outerFieldRadius)),
+  );
+
   const outerFieldLocal = sampleBoundary(
     outerFieldRadius,
     state.amplitude,
-    state.waves,
+    outerWaves,
     state.shape,
     arcFractions,
   );
   const innerFieldLocal = sampleBoundary(
     innerFieldRadius,
     state.amplitude,
-    state.waves,
+    innerWaves,
     state.shape,
     arcFractions,
   );
@@ -365,7 +373,13 @@ function exportMetadata() {
     innerFieldRadius: state.radius - state.fieldWidth,
     ribbonWidth: state.ribbonWidth,
     amplitude: state.amplitude,
-    waves: state.waves,
+    outerWaves: state.waves,
+    innerWaves: Math.max(
+      1,
+      Math.round(
+        state.waves * ((state.radius - state.fieldWidth) / state.radius),
+      ),
+    ),
     innerColour: state.innerColour,
     outerColour: state.outerColour,
     fieldColour: "#ffffff",

@@ -52,7 +52,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=3"/);
-  assert.match(html, /src="watercolour\.js\?v=6"/);
+  assert.match(html, /src="watercolour\.js\?v=7"/);
 });
 
 
@@ -73,7 +73,9 @@ test("explorer renders ribbons as layered strokes rather than offset polygons", 
   assert.match(js, /2 \* w/);
 });
 
-test("fractional wave counts blend adjacent periodic waveforms smoothly", async () => {
+
+
+test("crenellation uses a single pure sinusoid and integer closed wave counts", async () => {
   const geometry = await readFile(
     new URL("../docs/watercolour/geometry.mjs", import.meta.url),
     "utf8",
@@ -87,10 +89,12 @@ test("fractional wave counts blend adjacent periodic waveforms smoothly", async 
     "utf8",
   );
 
-  assert.match(html, /id="waves"[^>]*step="0\.05"/);
-  assert.match(geometry, /Math\.floor\(waves\)/);
-  assert.match(geometry, /Math\.ceil\(waves\)/);
-  assert.match(geometry, /\(1 - blend\) \* lowerWave \+ blend \* upperWave/);
-  assert.match(js, /const count = 4096/);
-  assert.ok(!js.includes("Math.round(\n    clamp(Number(state.waves)"));
+  assert.match(geometry, /Math\.cos\(wavePhase\)/);
+  assert.ok(!geometry.includes("lowerWave"));
+  assert.ok(!geometry.includes("upperWave"));
+  assert.ok(!geometry.includes("blend"));
+  assert.match(html, /id="waves"[^>]*step="1"/);
+  assert.match(js, /Math\.round\([\s\S]*Number\(state\.waves\)/);
+  assert.match(js, /const outerWaves = state\.waves/);
+  assert.match(js, /Math\.round\(state\.waves \* \(innerFieldRadius \/ outerFieldRadius\)\)/);
 });
