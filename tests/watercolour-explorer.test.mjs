@@ -226,3 +226,15 @@ test("colour dock marker follows pointer and exposes lightness control", async (
   assert.match(js, /function setSelectedLightness/);
   assert.match(js, /colourLightness\.addEventListener\("input"/);
 });
+
+
+test("colour-plane marker preserves the dragged position after gamut mapping", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /const colourPlanePosition =/);
+  assert.match(js, /colourPlanePosition\[selectedColourKey\] = \{ x, y \}/);
+  assert.match(js, /const position = colourPlanePosition\[selectedColourKey\]/);
+});
