@@ -110,19 +110,7 @@ test("SVG path helpers produce two closed subpaths for a ribbon", () => {
 });
 
 
-test("explorer does not display canonical-model prediction scores", async () => {
-  const html = await readFile(
-    new URL("../docs/watercolour/index.html", import.meta.url),
-    "utf8",
-  );
-
-  assert.ok(!html.includes("Δu"));
-  assert.ok(!html.includes("ΔY"));
-  assert.match(html, /type="module" src="watercolour\.js\?v=4"/);
-});
-
-
-test("explorer exposes empirical high-contrast presets without an optimum claim", async () => {
+test("explorer stays focused on manual stimulus exploration", async () => {
   const html = await readFile(
     new URL("../docs/watercolour/index.html", import.meta.url),
     "utf8",
@@ -132,108 +120,14 @@ test("explorer exposes empirical high-contrast presets without an optimum claim"
     "utf8",
   );
 
-  for (const id of [
-    "preset-blue-yellow",
-    "preset-yellow-blue",
-    "preset-magenta-green",
-    "preset-green-magenta",
-    "preset-red-cyan",
-    "preset-cyan-red",
-  ]) {
-    assert.ok(html.includes(`id="${id}"`));
-  }
-
-  for (const pair of [
-    ['innerColour: "#0000ff"', 'outerColour: "#ffff00"'],
-    ['innerColour: "#ffff00"', 'outerColour: "#0000ff"'],
-    ['innerColour: "#ff00ff"', 'outerColour: "#00ff00"'],
-    ['innerColour: "#00ff00"', 'outerColour: "#ff00ff"'],
-    ['innerColour: "#ff0000"', 'outerColour: "#00ffff"'],
-    ['innerColour: "#00ffff"', 'outerColour: "#ff0000"'],
-  ]) {
-    assert.ok(js.includes(pair[0]));
-    assert.ok(js.includes(pair[1]));
-  }
-
-  assert.ok(!html.includes("Model optimum"));
-  assert.ok(!js.includes("modelOptimum"));
-});
-
-
-test("pairwise test page reuses explorer geometry and records eight presets", async () => {
-  const html = await readFile(
-    new URL("../docs/watercolour/compare.html", import.meta.url),
-    "utf8",
-  );
-  const js = await readFile(
-    new URL("../docs/watercolour/compare.js", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(html, /Which white annulus shows the stronger apparent colour shift/);
-  assert.match(html, /compare\.js\?v=2/);
-  assert.match(js, /new URLSearchParams\(window\.location\.search\)/);
-  assert.match(js, /buildArcLengthMap/);
-  assert.match(js, /offsetClosedPolyline/);
-  assert.match(js, /ringPath/);
-  assert.equal((js.match(/\{ name:/g) ?? []).length, 8);
-  assert.match(js, /Winner:/);
-  assert.match(js, /Choices:/);
-});
-
-test("explorer offers pairwise test using current geometry", async () => {
-  const html = await readFile(
-    new URL("../docs/watercolour/index.html", import.meta.url),
-    "utf8",
-  );
-  const js = await readFile(
-    new URL("../docs/watercolour/watercolour.js", import.meta.url),
-    "utf8",
-  );
-
-  assert.ok(html.includes('id="pairwise-test"'));
-  assert.match(js, /function openPairwiseTest\(\)/);
-  for (const key of [
-    "radius",
-    "fieldWidth",
-    "shape",
-    "ribbonWidth",
-    "amplitude",
-    "waves",
-  ]) {
-    assert.ok(js.includes(key));
-  }
-  assert.match(js, /compare\.html\?/);
-});
-
-
-test("explorer pages version mutable CSS and JavaScript assets", async () => {
-  const indexHtml = await readFile(
-    new URL("../docs/watercolour/index.html", import.meta.url),
-    "utf8",
-  );
-  const compareHtml = await readFile(
-    new URL("../docs/watercolour/compare.html", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(indexHtml, /href="watercolour\.css\?v=2"/);
-  assert.match(indexHtml, /src="watercolour\.js\?v=4"/);
-  assert.match(compareHtml, /href="watercolour\.css\?v=2"/);
-  assert.match(compareHtml, /src="compare\.js\?v=2"/);
-});
-
-
-test("pairwise test locks input after a choice and completion", async () => {
-  const js = await readFile(
-    new URL("../docs/watercolour/compare.js", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(js, /let acceptingChoice = true/);
-  assert.match(js, /let completed = false/);
-  assert.match(js, /if \(!acceptingChoice \|\| completed\)/);
-  assert.match(js, /completed = true/);
-  assert.match(js, /elements\.choiceA\.disabled = true/);
-  assert.match(js, /elements\.choiceB\.disabled = true/);
+  assert.match(html, /id="preset-blue-green"/);
+  assert.match(html, /id="preset-red-yellow"/);
+  assert.ok(!html.includes("pairwise-test"));
+  assert.ok(!html.includes("preset-blue-yellow"));
+  assert.ok(!html.includes("preset-red-cyan"));
+  assert.ok(!js.includes("openPairwiseTest"));
+  assert.ok(!js.includes("blueYellow"));
+  assert.ok(!js.includes("redCyan"));
+  assert.match(html, /href="watercolour\.css\?v=3"/);
+  assert.match(html, /src="watercolour\.js\?v=5"/);
 });

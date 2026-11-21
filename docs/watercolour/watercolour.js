@@ -36,30 +36,6 @@ const PRESETS = Object.freeze({
     innerColour: "#f0cf45",
     outerColour: "#a93232",
   }),
-  blueYellow: Object.freeze({
-    innerColour: "#0000ff",
-    outerColour: "#ffff00",
-  }),
-  yellowBlue: Object.freeze({
-    innerColour: "#ffff00",
-    outerColour: "#0000ff",
-  }),
-  magentaGreen: Object.freeze({
-    innerColour: "#ff00ff",
-    outerColour: "#00ff00",
-  }),
-  greenMagenta: Object.freeze({
-    innerColour: "#00ff00",
-    outerColour: "#ff00ff",
-  }),
-  redCyan: Object.freeze({
-    innerColour: "#ff0000",
-    outerColour: "#00ffff",
-  }),
-  cyanRed: Object.freeze({
-    innerColour: "#00ffff",
-    outerColour: "#ff0000",
-  }),
 });
 
 const DEFAULT_STATE = Object.freeze({
@@ -101,13 +77,6 @@ const elements = {
   outerHex: document.getElementById("outer-hex"),
   presetBlueGreen: document.getElementById("preset-blue-green"),
   presetRedYellow: document.getElementById("preset-red-yellow"),
-  presetBlueYellow: document.getElementById("preset-blue-yellow"),
-  presetYellowBlue: document.getElementById("preset-yellow-blue"),
-  presetMagentaGreen: document.getElementById("preset-magenta-green"),
-  presetGreenMagenta: document.getElementById("preset-green-magenta"),
-  presetRedCyan: document.getElementById("preset-red-cyan"),
-  presetCyanRed: document.getElementById("preset-cyan-red"),
-  pairwiseTest: document.getElementById("pairwise-test"),
   focusView: document.getElementById("focus-view"),
   reset: document.getElementById("reset"),
   saveSvg: document.getElementById("save-svg"),
@@ -243,12 +212,6 @@ function syncControlsFromState() {
   for (const [name, element] of [
     ["blueGreen", elements.presetBlueGreen],
     ["redYellow", elements.presetRedYellow],
-    ["blueYellow", elements.presetBlueYellow],
-    ["yellowBlue", elements.presetYellowBlue],
-    ["magentaGreen", elements.presetMagentaGreen],
-    ["greenMagenta", elements.presetGreenMagenta],
-    ["redCyan", elements.presetRedCyan],
-    ["cyanRed", elements.presetCyanRed],
   ]) {
     element.classList.toggle("active", activePreset === name);
   }
@@ -439,19 +402,6 @@ function resetExplorer() {
   render();
 }
 
-function openPairwiseTest() {
-  clampState();
-  const params = new URLSearchParams({
-    radius: String(state.radius),
-    fieldWidth: String(state.fieldWidth),
-    shape: String(state.shape),
-    ribbonWidth: String(state.ribbonWidth),
-    amplitude: String(state.amplitude),
-    waves: String(state.waves),
-  });
-  window.location.href = "compare.html?" + params.toString();
-}
-
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
@@ -576,26 +526,7 @@ elements.presetBlueGreen.addEventListener("click", function () {
 elements.presetRedYellow.addEventListener("click", function () {
   applyPreset(PRESETS.redYellow);
 });
-elements.presetBlueYellow.addEventListener("click", function () {
-  applyPreset(PRESETS.blueYellow);
-});
-elements.presetYellowBlue.addEventListener("click", function () {
-  applyPreset(PRESETS.yellowBlue);
-});
-elements.presetMagentaGreen.addEventListener("click", function () {
-  applyPreset(PRESETS.magentaGreen);
-});
-elements.presetGreenMagenta.addEventListener("click", function () {
-  applyPreset(PRESETS.greenMagenta);
-});
-elements.presetRedCyan.addEventListener("click", function () {
-  applyPreset(PRESETS.redCyan);
-});
-elements.presetCyanRed.addEventListener("click", function () {
-  applyPreset(PRESETS.cyanRed);
-});
 
-elements.pairwiseTest.addEventListener("click", openPairwiseTest);
 elements.focusView.addEventListener("click", enterFocusView);
 elements.stage.addEventListener("click", function () {
   if (document.body.classList.contains("focus-mode")) {
