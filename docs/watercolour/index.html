@@ -7,7 +7,7 @@
   <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
-  <link rel="stylesheet" href="watercolour.css?v=5" />
+  <link rel="stylesheet" href="watercolour.css?v=6" />
 </head>
 <body>
   <header class="site-header">
@@ -46,10 +46,6 @@
               Outer
             </button>
           </div>
-          <div class="presets" aria-label="Colour presets">
-            <button id="preset-blue-green" class="preset-button active" type="button">Blue / green</button>
-            <button id="preset-red-yellow" class="preset-button" type="button">Red / yellow</button>
-          </div>
         </div>
 
         <div class="colour-plane-wrap">
@@ -62,11 +58,24 @@
           ></canvas>
           <div id="colour-plane-marker" class="colour-plane-marker" aria-hidden="true"></div>
         </div>
-        <div class="colour-axis colour-axis-horizontal">
-          <span>green</span><span>red</span>
+        <div class="colour-lightness">
+          <div class="control-heading">
+            <label for="colour-lightness">Lightness</label>
+            <output id="colour-lightness-value" for="colour-lightness"></output>
+          </div>
+          <input
+            id="colour-lightness"
+            type="range"
+            min="0.2"
+            max="0.9"
+            step="0.005"
+            value="0.6"
+          />
         </div>
-        <div class="colour-axis colour-axis-vertical" aria-hidden="true">
-          <span>yellow</span><span>blue</span>
+
+        <div class="colour-presets" aria-label="Colour presets">
+          <button id="preset-blue-green" class="preset-button active" type="button">Blue / green</button>
+          <button id="preset-red-yellow" class="preset-button" type="button">Red / yellow</button>
         </div>
       </section>
     </section>
@@ -149,6 +158,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=12"></script>
+  <script type="module" src="watercolour.js?v=13"></script>
 </body>
 </html>
