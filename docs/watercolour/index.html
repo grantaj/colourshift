@@ -26,11 +26,11 @@
         >
           <title id="stimulus-title">Interactive annular watercolour-effect double-contour stimulus</title>
           <rect x="0" y="0" width="760" height="760" fill="#ffffff" />
+          <path id="outer-barrier" fill="none" stroke="#3155a4" stroke-linejoin="round"></path>
+          <path id="inner-barrier" fill="none" stroke="#3155a4" stroke-linejoin="round"></path>
+          <path id="outer-inducing" fill="none" stroke="#6ec66a" stroke-linejoin="round"></path>
+          <path id="inner-inducing" fill="none" stroke="#6ec66a" stroke-linejoin="round"></path>
           <path id="field" fill="#ffffff" fill-rule="evenodd"></path>
-          <path id="outer-barrier" fill="#3155a4" fill-rule="evenodd"></path>
-          <path id="outer-inducing" fill="#6ec66a" fill-rule="evenodd"></path>
-          <path id="inner-barrier" fill="#3155a4" fill-rule="evenodd"></path>
-          <path id="inner-inducing" fill="#6ec66a" fill-rule="evenodd"></path>
         </svg>
       </div>
     </section>
@@ -85,7 +85,7 @@
               <label for="waves">Waves / wavelength</label>
               <output id="waves-value" for="waves"></output>
             </div>
-            <input id="waves" type="range" min="2" max="30" step="1" value="12" />
+            <input id="waves" type="range" min="2" max="30" step="0.05" value="12" />
           </div>
         </fieldset>
 
@@ -159,6 +159,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=5"></script>
+  <script type="module" src="watercolour.js?v=6"></script>
 </body>
 </html>

@@ -3,66 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
-  DEFAULT_MITER_LIMIT,
   buildArcLengthMap,
   closedPath,
   greekCrossRadiusFactor,
   minimumShapeFactor,
-  offsetClosedPolyline,
-  ringPath,
 } from "../docs/watercolour/geometry.mjs";
-
-test("extreme explorer controls retain a feasible field width", () => {
-  const centreMargin = 20;
-  const maxExtent = 360;
-  const radiusMaximum = 240;
-  const fieldWidthMinimum = 50;
-  const amplitudeMaximum = 35;
-  const ribbonWidthMaximum = 12;
-  const shape = 2;
-
-  const minimumFactor = minimumShapeFactor(shape);
-  const innerClearance =
-    centreMargin +
-    amplitudeMaximum +
-    2 * ribbonWidthMaximum * DEFAULT_MITER_LIMIT;
-  const minimumInnerBaseRadius = innerClearance / minimumFactor;
-  const minimumOuterRadius =
-    fieldWidthMinimum + minimumInnerBaseRadius;
-  const maximumOuterRadius =
-    maxExtent -
-    amplitudeMaximum -
-    2 * ribbonWidthMaximum * DEFAULT_MITER_LIMIT;
-
-  assert.ok(minimumOuterRadius <= radiusMaximum);
-  assert.ok(minimumOuterRadius <= maximumOuterRadius);
-  assert.ok(
-    radiusMaximum - minimumInnerBaseRadius >= fieldWidthMinimum,
-  );
-});
-
-test("mitered normal offset preserves constant-width square sides", () => {
-  const square = [
-    [-50, -50],
-    [50, -50],
-    [50, 50],
-    [-50, 50],
-  ];
-
-  assert.deepEqual(offsetClosedPolyline(square, 10), [
-    [-60, -60],
-    [60, -60],
-    [60, 60],
-    [-60, 60],
-  ]);
-
-  assert.deepEqual(offsetClosedPolyline(square, -10), [
-    [-40, -40],
-    [40, -40],
-    [40, 40],
-    [-40, 40],
-  ]);
-});
 
 test("Greek cross has axial arms and recessed diagonals", () => {
   const axial = greekCrossRadiusFactor(0);
@@ -87,28 +32,6 @@ test("arc-length map is monotone and closes one normalized perimeter", () => {
   assert.ok(map.fractions.at(-1) > 0.99);
 });
 
-test("SVG path helpers produce two closed subpaths for a ribbon", () => {
-  const inner = [
-    [1, 1],
-    [2, 1],
-    [2, 2],
-    [1, 2],
-  ];
-  const outer = [
-    [0, 0],
-    [3, 0],
-    [3, 3],
-    [0, 3],
-  ];
-
-  const path = ringPath(inner, outer);
-
-  assert.match(closedPath(inner), /^M /);
-  assert.equal((path.match(/ Z/g) ?? []).length, 2);
-  assert.ok(!path.includes("NaN"));
-  assert.ok(!path.includes("Infinity"));
-});
-
 
 test("explorer stays focused on manual stimulus exploration", async () => {
   const html = await readFile(
@@ -129,5 +52,45 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=3"/);
-  assert.match(html, /src="watercolour\.js\?v=5"/);
+  assert.match(html, /src="watercolour\.js\?v=6"/);
+});
+
+
+test("explorer renders ribbons as layered strokes rather than offset polygons", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /stroke-linejoin="round"/);
+  assert.ok(!js.includes("offsetClosedPolyline"));
+  assert.match(js, /stroke-width/);
+  assert.match(js, /4 \* w/);
+  assert.match(js, /2 \* w/);
+});
+
+test("fractional wave counts blend adjacent periodic waveforms smoothly", async () => {
+  const geometry = await readFile(
+    new URL("../docs/watercolour/geometry.mjs", import.meta.url),
+    "utf8",
+  );
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /id="waves"[^>]*step="0\.05"/);
+  assert.match(geometry, /Math\.floor\(waves\)/);
+  assert.match(geometry, /Math\.ceil\(waves\)/);
+  assert.match(geometry, /\(1 - blend\) \* lowerWave \+ blend \* upperWave/);
+  assert.match(js, /const count = 4096/);
+  assert.ok(!js.includes("Math.round(\n    clamp(Number(state.waves)"));
 });

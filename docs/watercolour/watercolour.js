@@ -1,13 +1,11 @@
 "use strict";
 
 import {
-  DEFAULT_MITER_LIMIT,
   buildArcLengthMap,
   clamp,
   minimumShapeFactor,
-  offsetClosedPolyline,
-  ringPath,
   sampleBoundary,
+  closedPath,
   translatePoints,
 } from "./geometry.mjs";
 
@@ -98,15 +96,13 @@ function clampState() {
     LIMITS.amplitude[0],
     LIMITS.amplitude[1],
   );
-  state.waves = Math.round(
-    clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]),
-  );
+  state.waves = clamp(Number(state.waves), LIMITS.waves[0], LIMITS.waves[1]);
 
   const minimumFactor = minimumShapeFactor(state.shape);
   const innerClearance =
     CENTRE_MARGIN +
     state.amplitude +
-    2 * state.ribbonWidth * DEFAULT_MITER_LIMIT;
+    2 * state.ribbonWidth;
   const minimumInnerBaseRadius = innerClearance / minimumFactor;
 
   const minimumOuterRadius =
@@ -114,7 +110,7 @@ function clampState() {
   const maximumOuterRadius =
     MAX_EXTENT -
     state.amplitude -
-    2 * state.ribbonWidth * DEFAULT_MITER_LIMIT;
+    2 * state.ribbonWidth;
 
   const radiusMinimum = Math.max(LIMITS.radius[0], minimumOuterRadius);
   const radiusMaximum = Math.min(LIMITS.radius[1], maximumOuterRadius);
@@ -201,12 +197,12 @@ function syncControlsFromState() {
   elements.ribbonWidthValue.value = formatValue(state.ribbonWidth, 0);
   elements.amplitudeValue.value = formatValue(state.amplitude, 0);
 
-  const count = Math.max(1440, 96 * state.waves);
+  const count = 4096;
   const arcMap = buildArcLengthMap(state.shape, count);
   const perimeter = arcMap.perimeterFactor * state.radius;
   const wavelength = perimeter / state.waves;
   elements.wavesValue.value =
-    state.waves + " · λ ≈ " + formatValue(wavelength, 0);
+    formatValue(state.waves, 2) + " · λ ≈ " + formatValue(wavelength, 0);
 
   const activePreset = activePresetName();
   for (const [name, element] of [
@@ -223,7 +219,7 @@ function render() {
   const outerFieldRadius = state.radius;
   const innerFieldRadius = state.radius - state.fieldWidth;
   const w = state.ribbonWidth;
-  const count = Math.max(1440, 96 * state.waves);
+  const count = 4096;
   const arcMap = buildArcLengthMap(state.shape, count);
   const arcFractions = arcMap.fractions;
 
@@ -242,75 +238,30 @@ function render() {
     arcFractions,
   );
 
-  const outerInducingLocal = offsetClosedPolyline(
-    outerFieldLocal,
-    w,
-  );
-  const outerBarrierLocal = offsetClosedPolyline(
-    outerFieldLocal,
-    2 * w,
-  );
-  const innerInducingLocal = offsetClosedPolyline(
-    innerFieldLocal,
-    -w,
-  );
-  const innerBarrierLocal = offsetClosedPolyline(
-    innerFieldLocal,
-    -2 * w,
-  );
-
   const outerField = translatePoints(outerFieldLocal, CENTRE, CENTRE);
   const innerField = translatePoints(innerFieldLocal, CENTRE, CENTRE);
-  const outerInducing = translatePoints(
-    outerInducingLocal,
-    CENTRE,
-    CENTRE,
-  );
-  const outerBarrier = translatePoints(
-    outerBarrierLocal,
-    CENTRE,
-    CENTRE,
-  );
-  const innerInducing = translatePoints(
-    innerInducingLocal,
-    CENTRE,
-    CENTRE,
-  );
-  const innerBarrier = translatePoints(
-    innerBarrierLocal,
-    CENTRE,
-    CENTRE,
-  );
+  const outerPath = closedPath(outerField);
+  const innerPath = closedPath(innerField);
+
+  elements.outerBarrier.setAttribute("d", outerPath);
+  elements.innerBarrier.setAttribute("d", innerPath);
+  elements.outerInducing.setAttribute("d", outerPath);
+  elements.innerInducing.setAttribute("d", innerPath);
+
+  for (const element of [elements.outerBarrier, elements.innerBarrier]) {
+    element.setAttribute("stroke", state.outerColour);
+    element.setAttribute("stroke-width", String(4 * w));
+  }
+  for (const element of [elements.outerInducing, elements.innerInducing]) {
+    element.setAttribute("stroke", state.innerColour);
+    element.setAttribute("stroke-width", String(2 * w));
+  }
 
   elements.field.setAttribute(
     "d",
-    ringPath(innerField, outerField),
+    closedPath(outerField) + " " + closedPath(innerField.slice().reverse()),
   );
   elements.field.setAttribute("fill", "#ffffff");
-
-  elements.outerInducing.setAttribute(
-    "d",
-    ringPath(outerField, outerInducing),
-  );
-  elements.outerInducing.setAttribute("fill", state.innerColour);
-
-  elements.outerBarrier.setAttribute(
-    "d",
-    ringPath(outerInducing, outerBarrier),
-  );
-  elements.outerBarrier.setAttribute("fill", state.outerColour);
-
-  elements.innerInducing.setAttribute(
-    "d",
-    ringPath(innerInducing, innerField),
-  );
-  elements.innerInducing.setAttribute("fill", state.innerColour);
-
-  elements.innerBarrier.setAttribute(
-    "d",
-    ringPath(innerBarrier, innerInducing),
-  );
-  elements.innerBarrier.setAttribute("fill", state.outerColour);
 
   syncControlsFromState();
 }
@@ -405,7 +356,7 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 2,
+    version: 3,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
