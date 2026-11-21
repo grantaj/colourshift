@@ -54,8 +54,8 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("openPairwiseTest"));
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
-  assert.match(html, /href="watercolour\.css\?v=5"/);
-  assert.match(html, /src="watercolour\.js\?v=12"/);
+  assert.match(html, /href="watercolour\.css\?v=6"/);
+  assert.match(html, /src="watercolour\.js\?v=13"/);
 });
 
 
@@ -205,4 +205,36 @@ test("colour exploration uses a nearby two-dimensional OKLab plane", async () =>
   assert.match(js, /function gamutMappedOklab/);
   assert.match(js, /function bindColourPlane/);
   assert.match(css, /\.colour-plane[\s\S]*touch-action: none/);
+});
+
+
+test("colour dock marker follows pointer and exposes lightness control", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /id="colour-lightness"/);
+  assert.ok(!html.includes(">green<"));
+  assert.ok(!html.includes(">red<"));
+  assert.match(js, /function setColourPlaneMarkerPosition/);
+  assert.match(js, /setColourPlaneMarkerPosition\(x, y\)/);
+  assert.match(js, /function setSelectedLightness/);
+  assert.match(js, /colourLightness\.addEventListener\("input"/);
+});
+
+
+test("colour-plane marker preserves the dragged position after gamut mapping", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /const colourPlanePosition =/);
+  assert.match(js, /colourPlanePosition\[selectedColourKey\] = \{ x, y \}/);
+  assert.match(js, /const position = colourPlanePosition\[selectedColourKey\]/);
 });

@@ -68,13 +68,11 @@ h1 {
 .colour-dock-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  justify-content: center;
   margin-bottom: 0.65rem;
 }
 
-.colour-targets,
-.presets {
+.colour-targets {
   display: flex;
   gap: 0.5rem;
 }
@@ -139,20 +137,27 @@ h1 {
   pointer-events: none;
 }
 
-.colour-axis {
+.colour-lightness {
   width: min(100%, 300px);
-  margin: 0.18rem auto 0;
-  color: var(--muted);
-  font-size: 0.72rem;
+  margin: 0.65rem auto 0;
 }
 
-.colour-axis-horizontal {
+.colour-lightness input[type="range"] {
+  width: 100%;
+}
+
+.colour-presets {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
 }
 
-.colour-axis-vertical {
-  display: none;
+.colour-presets .preset-button {
+  min-height: 32px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .stage {
@@ -376,14 +381,17 @@ body.focus-mode #stimulus {
     gap: 0.45rem;
   }
 
-  .colour-targets,
-  .presets {
+  .colour-targets {
     justify-content: center;
   }
 
   .colour-plane-wrap,
-  .colour-axis {
+  .colour-lightness {
     width: min(76vw, 280px);
+  }
+
+  .colour-presets {
+    flex-wrap: wrap;
   }
 
   .control + .control,

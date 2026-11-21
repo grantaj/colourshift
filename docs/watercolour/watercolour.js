@@ -57,6 +57,10 @@ const fixedColourLightness = {
   innerColour: null,
   outerColour: null,
 };
+const colourPlanePosition = {
+  innerColour: null,
+  outerColour: null,
+};
 
 function srgbChannelToLinear(channel) {
   return channel <= 0.04045
@@ -155,6 +159,16 @@ function syncFixedColourLightness() {
   fixedColourLightness.outerColour = colourLab("outerColour").L;
 }
 
+function syncPlanePositionsFromColours() {
+  for (const key of ["innerColour", "outerColour"]) {
+    const lab = colourLab(key);
+    colourPlanePosition[key] = {
+      x: clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1),
+      y: clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1),
+    };
+  }
+}
+
 function drawColourPlane(force = false) {
   const lab = colourLab(selectedColourKey);
   const lightness = fixedColourLightness[selectedColourKey] ?? lab.L;
@@ -184,17 +198,32 @@ function drawColourPlane(force = false) {
   renderedPlaneLightness = lightness;
 }
 
+function setColourPlaneMarkerPosition(x, y) {
+  elements.colourPlaneMarker.style.left = (100 * clamp(x, 0, 1)) + "%";
+  elements.colourPlaneMarker.style.top = (100 * clamp(y, 0, 1)) + "%";
+}
+
 function updateColourPlaneMarker() {
+  const position = colourPlanePosition[selectedColourKey];
+  if (position !== null) {
+    setColourPlaneMarkerPosition(position.x, position.y);
+    return;
+  }
+
   const lab = colourLab(selectedColourKey);
-  const x = clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1);
-  const y = clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1);
-  elements.colourPlaneMarker.style.left = (100 * x) + "%";
-  elements.colourPlaneMarker.style.top = (100 * y) + "%";
+  setColourPlaneMarkerPosition(
+    clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1),
+    clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1),
+  );
 }
 
 function syncColourDock() {
   elements.innerSwatch.style.background = state.innerColour;
   elements.outerSwatch.style.background = state.outerColour;
+  const selectedLightness =
+    fixedColourLightness[selectedColourKey] ?? colourLab(selectedColourKey).L;
+  elements.colourLightness.value = String(selectedLightness);
+  elements.colourLightnessValue.value = selectedLightness.toFixed(2);
 
   elements.editInner.classList.toggle("active", selectedColourKey === "innerColour");
   elements.editOuter.classList.toggle("active", selectedColourKey === "outerColour");
@@ -217,6 +246,17 @@ function selectColour(key) {
   syncColourDock();
 }
 
+function setSelectedLightness(value) {
+  const lab = colourLab(selectedColourKey);
+  const L = clamp(Number(value), 0.2, 0.9);
+  fixedColourLightness[selectedColourKey] = L;
+  state[selectedColourKey] = rgbToHex(
+    gamutMappedOklab(L, lab.a, lab.b),
+  );
+  renderedPlaneLightness = null;
+  render();
+}
+
 function setColourFromPlaneEvent(event) {
   const rect = elements.colourPlane.getBoundingClientRect();
   const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
@@ -225,6 +265,8 @@ function setColourFromPlaneEvent(event) {
   const b = OKLAB_RANGE * (1 - 2 * y);
   const L = fixedColourLightness[selectedColourKey] ??
     colourLab(selectedColourKey).L;
+  colourPlanePosition[selectedColourKey] = { x, y };
+  setColourPlaneMarkerPosition(x, y);
   state[selectedColourKey] = rgbToHex(gamutMappedOklab(L, a, b));
   render();
 }
@@ -275,6 +317,8 @@ const elements = {
   crenellationShapeValue: document.getElementById("crenellation-shape-value"),
   colourPlane: document.getElementById("colour-plane"),
   colourPlaneMarker: document.getElementById("colour-plane-marker"),
+  colourLightness: document.getElementById("colour-lightness"),
+  colourLightnessValue: document.getElementById("colour-lightness-value"),
   editInner: document.getElementById("edit-inner"),
   editOuter: document.getElementById("edit-outer"),
   innerSwatch: document.getElementById("inner-swatch"),
@@ -496,6 +540,7 @@ function applyPreset(preset) {
   state.innerColour = preset.innerColour;
   state.outerColour = preset.outerColour;
   syncFixedColourLightness();
+  syncPlanePositionsFromColours();
   renderedPlaneLightness = null;
   render();
 }
@@ -536,6 +581,7 @@ function syncFocusMode() {
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
   syncFixedColourLightness();
+  syncPlanePositionsFromColours();
   renderedPlaneLightness = null;
   render();
 }
@@ -543,7 +589,7 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 8,
+    version: 9,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
@@ -656,7 +702,11 @@ bindRange(elements.waves, "waves");
 bindRange(elements.crenellationShape, "crenellationShape");
 
 syncFixedColourLightness();
+syncPlanePositionsFromColours();
 bindColourPlane();
+elements.colourLightness.addEventListener("input", function () {
+  setSelectedLightness(elements.colourLightness.value);
+});
 elements.editInner.addEventListener("click", function () {
   selectColour("innerColour");
 });
