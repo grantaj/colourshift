@@ -110,22 +110,80 @@ export function buildArcLengthMap(shape, count) {
   };
 }
 
-export function pointOnBoundary(
-  radius,
-  amplitude,
-  waves,
-  shape,
-  theta,
-  arcFraction,
-) {
-  const shapedRadius = radius * shapeRadiusFactor(theta, shape);
-  const wavePhase = 2 * Math.PI * waves * arcFraction;
-  const r = shapedRadius + amplitude * Math.cos(wavePhase);
+function wrap01(value) {
+  return ((value % 1) + 1) % 1;
+}
+
+function interpolateBasePoint(shape, arcFractions, fraction) {
+  const target = wrap01(fraction);
+  let low = 0;
+  let high = arcFractions.length - 1;
+
+  while (low < high) {
+    const mid = Math.floor((low + high + 1) / 2);
+    if (arcFractions[mid] <= target) {
+      low = mid;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  const index = low;
+  const nextIndex = (index + 1) % arcFractions.length;
+  const startFraction = arcFractions[index];
+  const endFraction =
+    nextIndex === 0 ? 1 : arcFractions[nextIndex];
+  const span = Math.max(1e-12, endFraction - startFraction);
+  const t = (target - startFraction) / span;
+
+  const theta0 = (2 * Math.PI * index) / arcFractions.length;
+  const theta1 =
+    nextIndex === 0
+      ? 2 * Math.PI
+      : (2 * Math.PI * nextIndex) / arcFractions.length;
+  const p0 = basePoint(shape, theta0);
+  const p1 = basePoint(shape, theta1);
 
   return [
-    r * Math.cos(theta),
-    r * Math.sin(theta),
+    p0[0] + t * (p1[0] - p0[0]),
+    p0[1] + t * (p1[1] - p0[1]),
   ];
+}
+
+function normalAtArcFraction(shape, arcFractions, fraction, step) {
+  const before = interpolateBasePoint(
+    shape,
+    arcFractions,
+    fraction - step,
+  );
+  const after = interpolateBasePoint(
+    shape,
+    arcFractions,
+    fraction + step,
+  );
+  const tx = after[0] - before[0];
+  const ty = after[1] - before[1];
+  const length = Math.hypot(tx, ty);
+
+  if (length < 1e-12) {
+    return [0, 0];
+  }
+
+  return [ty / length, -tx / length];
+}
+
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+
+  return [0, 1].map(function (axis) {
+    return 0.5 * (
+      2 * p1[axis] +
+      (-p0[axis] + p2[axis]) * t +
+      (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t2 +
+      (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t3
+    );
+  });
 }
 
 export function sampleBoundary(
@@ -135,21 +193,40 @@ export function sampleBoundary(
   shape,
   arcFractions,
 ) {
-  const count = arcFractions.length;
-  const points = [];
+  const waveCount = Math.max(1, Math.round(waves));
+  const controlCount = 2 * waveCount;
+  const normalStep = 1 / (controlCount * 32);
+  const controls = [];
 
-  for (let index = 0; index < count; index += 1) {
-    const theta = (2 * Math.PI * index) / count;
-    points.push(
-      pointOnBoundary(
-        radius,
-        amplitude,
-        waves,
-        shape,
-        theta,
-        arcFractions[index],
-      ),
+  for (let index = 0; index < controlCount; index += 1) {
+    const fraction = index / controlCount;
+    const base = interpolateBasePoint(shape, arcFractions, fraction);
+    const normal = normalAtArcFraction(
+      shape,
+      arcFractions,
+      fraction,
+      normalStep,
     );
+    const displacement = (index % 2 === 0 ? 1 : -1) * amplitude;
+
+    controls.push([
+      radius * base[0] + displacement * normal[0],
+      radius * base[1] + displacement * normal[1],
+    ]);
+  }
+
+  const points = [];
+  const sampleCount = arcFractions.length;
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const position = (index * controlCount) / sampleCount;
+    const segment = Math.floor(position);
+    const t = position - segment;
+    const p0 = controls[(segment - 1 + controlCount) % controlCount];
+    const p1 = controls[segment % controlCount];
+    const p2 = controls[(segment + 1) % controlCount];
+    const p3 = controls[(segment + 2) % controlCount];
+    points.push(catmullRom(p0, p1, p2, p3, t));
   }
 
   return points;
