@@ -1,8 +1,6 @@
 "use strict";
 
 export const DEFAULT_MITER_LIMIT = 2;
-export const GREEK_CROSS_HALF_WIDTH = 0.42;
-const GREEK_CROSS_NORMALISER = Math.hypot(1, GREEK_CROSS_HALF_WIDTH);
 
 export function clamp(value, minimum, maximum) {
   if (maximum < minimum) {
