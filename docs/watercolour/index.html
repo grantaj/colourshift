@@ -7,7 +7,7 @@
   <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
-  <link rel="stylesheet" href="watercolour.css?v=4" />
+  <link rel="stylesheet" href="watercolour.css?v=5" />
 </head>
 <body>
   <header class="site-header">
@@ -33,6 +33,42 @@
           <path id="field" fill="#ffffff" fill-rule="evenodd"></path>
         </svg>
       </div>
+
+      <section class="colour-dock" aria-label="Colour explorer">
+        <div class="colour-dock-heading">
+          <div class="colour-targets" role="group" aria-label="Colour to edit">
+            <button id="edit-inner" class="colour-target active" type="button" aria-pressed="true">
+              <span id="inner-swatch" class="target-swatch" aria-hidden="true"></span>
+              Inner
+            </button>
+            <button id="edit-outer" class="colour-target" type="button" aria-pressed="false">
+              <span id="outer-swatch" class="target-swatch" aria-hidden="true"></span>
+              Outer
+            </button>
+          </div>
+          <div class="presets" aria-label="Colour presets">
+            <button id="preset-blue-green" class="preset-button active" type="button">Blue / green</button>
+            <button id="preset-red-yellow" class="preset-button" type="button">Red / yellow</button>
+          </div>
+        </div>
+
+        <div class="colour-plane-wrap">
+          <canvas
+            id="colour-plane"
+            class="colour-plane"
+            width="180"
+            height="180"
+            aria-label="OKLab chromatic colour plane"
+          ></canvas>
+          <div id="colour-plane-marker" class="colour-plane-marker" aria-hidden="true"></div>
+        </div>
+        <div class="colour-axis colour-axis-horizontal">
+          <span>green</span><span>red</span>
+        </div>
+        <div class="colour-axis colour-axis-vertical" aria-hidden="true">
+          <span>yellow</span><span>blue</span>
+        </div>
+      </section>
     </section>
 
     <aside class="controls-panel" aria-label="Explorer controls">
@@ -104,67 +140,6 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Colours</legend>
-
-          <div class="presets" aria-label="Colour presets">
-            <button id="preset-blue-green" class="preset-button active" type="button">
-              Blue / green
-            </button>
-            <button id="preset-red-yellow" class="preset-button" type="button">
-              Red / yellow
-            </button>
-          </div>
-
-          <div class="colour-control">
-            <label for="inner-colour">Inner</label>
-            <div class="colour-inputs">
-              <input
-                id="inner-colour"
-                class="colour-picker"
-                type="color"
-                value="#6ec66a"
-                aria-label="Inner inducing contour colour"
-              />
-              <label class="visually-hidden" for="inner-hex">Inner inducing contour hexadecimal colour</label>
-              <input
-                id="inner-hex"
-                class="hex-input"
-                type="text"
-                value="#6EC66A"
-                maxlength="7"
-                spellcheck="false"
-                autocomplete="off"
-                aria-label="Inner inducing contour hexadecimal colour"
-              />
-            </div>
-          </div>
-
-          <div class="colour-control">
-            <label for="outer-colour">Outer</label>
-            <div class="colour-inputs">
-              <input
-                id="outer-colour"
-                class="colour-picker"
-                type="color"
-                value="#3155a4"
-                aria-label="Outer barrier contour colour"
-              />
-              <label class="visually-hidden" for="outer-hex">Outer barrier contour hexadecimal colour</label>
-              <input
-                id="outer-hex"
-                class="hex-input"
-                type="text"
-                value="#3155A4"
-                maxlength="7"
-                spellcheck="false"
-                autocomplete="off"
-                aria-label="Outer barrier contour hexadecimal colour"
-              />
-            </div>
-          </div>
-        </fieldset>
-
         <div class="actions">
           <button id="focus-view" class="button secondary wide" type="button">Focus view</button>
           <button id="reset" class="button secondary" type="button">Reset</button>
@@ -174,6 +149,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=11"></script>
+  <script type="module" src="watercolour.js?v=12"></script>
 </body>
 </html>
