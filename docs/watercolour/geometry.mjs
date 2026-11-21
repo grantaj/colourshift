@@ -1,8 +1,6 @@
 "use strict";
 
 export const DEFAULT_MITER_LIMIT = 2;
-export const GREEK_CROSS_HALF_WIDTH = 0.42;
-const GREEK_CROSS_NORMALISER = Math.hypot(1, GREEK_CROSS_HALF_WIDTH);
 
 export function clamp(value, minimum, maximum) {
   if (maximum < minimum) {
@@ -16,43 +14,23 @@ export function smoothstep01(value) {
   return t * t * (3 - 2 * t);
 }
 
-export function squareRadiusFactor(theta) {
-  const denominator =
-    Math.SQRT2 *
-    Math.max(Math.abs(Math.cos(theta)), Math.abs(Math.sin(theta)));
-  return 1 / denominator;
-}
-
-export function greekCrossRadiusFactor(theta) {
+export function superellipseRadiusFactor(theta, shape) {
+  const t = smoothstep01(shape);
+  const exponent = 2 + 2 * t;
   const c = Math.abs(Math.cos(theta));
   const s = Math.abs(Math.sin(theta));
-  const halfLength = 1 / GREEK_CROSS_NORMALISER;
-  const halfWidth = GREEK_CROSS_HALF_WIDTH / GREEK_CROSS_NORMALISER;
-  const epsilon = 1e-12;
+  const denominator =
+    Math.pow(
+      Math.pow(c, exponent) + Math.pow(s, exponent),
+      1 / exponent,
+    );
+  const diagonalNormaliser = Math.pow(2, 1 / exponent - 0.5);
 
-  const horizontal = Math.min(
-    c > epsilon ? halfLength / c : Number.POSITIVE_INFINITY,
-    s > epsilon ? halfWidth / s : Number.POSITIVE_INFINITY,
-  );
-  const vertical = Math.min(
-    c > epsilon ? halfWidth / c : Number.POSITIVE_INFINITY,
-    s > epsilon ? halfLength / s : Number.POSITIVE_INFINITY,
-  );
-
-  return Math.max(horizontal, vertical);
+  return diagonalNormaliser / denominator;
 }
 
 export function shapeRadiusFactor(theta, shape) {
-  const square = squareRadiusFactor(theta);
-
-  if (shape <= 1) {
-    const t = smoothstep01(shape);
-    return 1 + t * (square - 1);
-  }
-
-  const cross = greekCrossRadiusFactor(theta);
-  const t = smoothstep01(shape - 1);
-  return square + t * (cross - square);
+  return superellipseRadiusFactor(theta, shape);
 }
 
 export function minimumShapeFactor(shape, samples = 1440) {
