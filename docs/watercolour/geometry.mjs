@@ -119,16 +119,8 @@ export function pointOnBoundary(
   arcFraction,
 ) {
   const shapedRadius = radius * shapeRadiusFactor(theta, shape);
-  const lowerWaves = Math.max(1, Math.floor(waves));
-  const upperWaves = Math.max(1, Math.ceil(waves));
-  const blend = waves - lowerWaves;
-  const lowerWave = Math.cos(2 * Math.PI * lowerWaves * arcFraction);
-  const upperWave = Math.cos(2 * Math.PI * upperWaves * arcFraction);
-  const modulation =
-    lowerWaves === upperWaves
-      ? lowerWave
-      : (1 - blend) * lowerWave + blend * upperWave;
-  const r = shapedRadius + amplitude * modulation;
+  const wavePhase = 2 * Math.PI * waves * arcFraction;
+  const r = shapedRadius + amplitude * Math.cos(wavePhase);
 
   return [
     r * Math.cos(theta),
