@@ -50,6 +50,206 @@ const DEFAULT_STATE = Object.freeze({
 });
 
 const state = { ...DEFAULT_STATE };
+const OKLAB_RANGE = 0.25;
+let selectedColourKey = "innerColour";
+let renderedPlaneLightness = null;
+const fixedColourLightness = {
+  innerColour: null,
+  outerColour: null,
+};
+
+function srgbChannelToLinear(channel) {
+  return channel <= 0.04045
+    ? channel / 12.92
+    : Math.pow((channel + 0.055) / 1.055, 2.4);
+}
+
+function linearChannelToSrgb(channel) {
+  return channel <= 0.0031308
+    ? 12.92 * channel
+    : 1.055 * Math.pow(channel, 1 / 2.4) - 0.055;
+}
+
+function hexToRgb(hex) {
+  return [
+    parseInt(hex.slice(1, 3), 16) / 255,
+    parseInt(hex.slice(3, 5), 16) / 255,
+    parseInt(hex.slice(5, 7), 16) / 255,
+  ];
+}
+
+function rgbToHex(rgb) {
+  return (
+    "#" +
+    rgb.map(function (channel) {
+      return Math.round(clamp(channel, 0, 1) * 255)
+        .toString(16)
+        .padStart(2, "0");
+    }).join("")
+  );
+}
+
+function rgbToOklab(rgb) {
+  const r = srgbChannelToLinear(rgb[0]);
+  const g = srgbChannelToLinear(rgb[1]);
+  const b = srgbChannelToLinear(rgb[2]);
+
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+
+  return {
+    L: 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+    a: 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    b: 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+  };
+}
+
+function oklabToLinearRgb(L, a, b) {
+  const lRoot = L + 0.3963377774 * a + 0.2158037573 * b;
+  const mRoot = L - 0.1055613458 * a - 0.0638541728 * b;
+  const sRoot = L - 0.0894841775 * a - 1.291485548 * b;
+  const l = lRoot * lRoot * lRoot;
+  const m = mRoot * mRoot * mRoot;
+  const s = sRoot * sRoot * sRoot;
+
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+}
+
+function linearRgbInGamut(rgb) {
+  return rgb.every(function (channel) {
+    return channel >= 0 && channel <= 1;
+  });
+}
+
+function gamutMappedOklab(L, a, b) {
+  let linear = oklabToLinearRgb(L, a, b);
+  if (!linearRgbInGamut(linear)) {
+    let low = 0;
+    let high = 1;
+    for (let iteration = 0; iteration < 12; iteration += 1) {
+      const scale = (low + high) / 2;
+      const candidate = oklabToLinearRgb(L, a * scale, b * scale);
+      if (linearRgbInGamut(candidate)) {
+        low = scale;
+        linear = candidate;
+      } else {
+        high = scale;
+      }
+    }
+  }
+
+  return linear.map(linearChannelToSrgb);
+}
+
+function colourLab(key) {
+  return rgbToOklab(hexToRgb(state[key]));
+}
+
+function syncFixedColourLightness() {
+  fixedColourLightness.innerColour = colourLab("innerColour").L;
+  fixedColourLightness.outerColour = colourLab("outerColour").L;
+}
+
+function drawColourPlane(force = false) {
+  const lab = colourLab(selectedColourKey);
+  const lightness = fixedColourLightness[selectedColourKey] ?? lab.L;
+  if (!force && renderedPlaneLightness !== null &&
+      Math.abs(renderedPlaneLightness - lightness) < 0.0005) {
+    return;
+  }
+
+  const canvas = elements.colourPlane;
+  const context = canvas.getContext("2d");
+  const image = context.createImageData(canvas.width, canvas.height);
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    const b = OKLAB_RANGE * (1 - 2 * y / (canvas.height - 1));
+    for (let x = 0; x < canvas.width; x += 1) {
+      const a = OKLAB_RANGE * (2 * x / (canvas.width - 1) - 1);
+      const rgb = gamutMappedOklab(lightness, a, b);
+      const offset = 4 * (y * canvas.width + x);
+      image.data[offset] = Math.round(clamp(rgb[0], 0, 1) * 255);
+      image.data[offset + 1] = Math.round(clamp(rgb[1], 0, 1) * 255);
+      image.data[offset + 2] = Math.round(clamp(rgb[2], 0, 1) * 255);
+      image.data[offset + 3] = 255;
+    }
+  }
+
+  context.putImageData(image, 0, 0);
+  renderedPlaneLightness = lightness;
+}
+
+function updateColourPlaneMarker() {
+  const lab = colourLab(selectedColourKey);
+  const x = clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1);
+  const y = clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1);
+  elements.colourPlaneMarker.style.left = (100 * x) + "%";
+  elements.colourPlaneMarker.style.top = (100 * y) + "%";
+}
+
+function syncColourDock() {
+  elements.innerSwatch.style.background = state.innerColour;
+  elements.outerSwatch.style.background = state.outerColour;
+
+  elements.editInner.classList.toggle("active", selectedColourKey === "innerColour");
+  elements.editOuter.classList.toggle("active", selectedColourKey === "outerColour");
+  elements.editInner.setAttribute(
+    "aria-pressed",
+    String(selectedColourKey === "innerColour"),
+  );
+  elements.editOuter.setAttribute(
+    "aria-pressed",
+    String(selectedColourKey === "outerColour"),
+  );
+
+  drawColourPlane();
+  updateColourPlaneMarker();
+}
+
+function selectColour(key) {
+  selectedColourKey = key;
+  renderedPlaneLightness = null;
+  syncColourDock();
+}
+
+function setColourFromPlaneEvent(event) {
+  const rect = elements.colourPlane.getBoundingClientRect();
+  const x = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+  const y = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+  const a = OKLAB_RANGE * (2 * x - 1);
+  const b = OKLAB_RANGE * (1 - 2 * y);
+  const L = fixedColourLightness[selectedColourKey] ??
+    colourLab(selectedColourKey).L;
+  state[selectedColourKey] = rgbToHex(gamutMappedOklab(L, a, b));
+  render();
+}
+
+function bindColourPlane() {
+  let dragging = false;
+
+  elements.colourPlane.addEventListener("pointerdown", function (event) {
+    dragging = true;
+    elements.colourPlane.setPointerCapture(event.pointerId);
+    setColourFromPlaneEvent(event);
+  });
+  elements.colourPlane.addEventListener("pointermove", function (event) {
+    if (dragging) {
+      setColourFromPlaneEvent(event);
+    }
+  });
+  elements.colourPlane.addEventListener("pointerup", function (event) {
+    dragging = false;
+    elements.colourPlane.releasePointerCapture(event.pointerId);
+  });
+  elements.colourPlane.addEventListener("pointercancel", function () {
+    dragging = false;
+  });
+}
 
 const elements = {
   svg: document.getElementById("stimulus"),
@@ -73,10 +273,12 @@ const elements = {
   amplitudeValue: document.getElementById("amplitude-value"),
   wavesValue: document.getElementById("waves-value"),
   crenellationShapeValue: document.getElementById("crenellation-shape-value"),
-  innerColour: document.getElementById("inner-colour"),
-  outerColour: document.getElementById("outer-colour"),
-  innerHex: document.getElementById("inner-hex"),
-  outerHex: document.getElementById("outer-hex"),
+  colourPlane: document.getElementById("colour-plane"),
+  colourPlaneMarker: document.getElementById("colour-plane-marker"),
+  editInner: document.getElementById("edit-inner"),
+  editOuter: document.getElementById("edit-outer"),
+  innerSwatch: document.getElementById("inner-swatch"),
+  outerSwatch: document.getElementById("outer-swatch"),
   presetBlueGreen: document.getElementById("preset-blue-green"),
   presetRedYellow: document.getElementById("preset-red-yellow"),
   focusView: document.getElementById("focus-view"),
@@ -189,14 +391,6 @@ function syncControlsFromState() {
   elements.waves.value = String(state.waves);
   elements.crenellationShape.value = String(state.crenellationShape);
 
-  elements.innerColour.value = state.innerColour;
-  elements.outerColour.value = state.outerColour;
-  elements.innerHex.value = state.innerColour.toUpperCase();
-  elements.outerHex.value = state.outerColour.toUpperCase();
-
-  elements.innerHex.setAttribute("aria-invalid", "false");
-  elements.outerHex.setAttribute("aria-invalid", "false");
-
   elements.radiusValue.value = formatValue(state.radius, 0);
   elements.fieldWidthValue.value = formatValue(state.fieldWidth, 0);
   elements.shapeValue.value = shapeLabel(state.shape);
@@ -226,6 +420,8 @@ function syncControlsFromState() {
   ]) {
     element.classList.toggle("active", activePreset === name);
   }
+
+  syncColourDock();
 }
 
 function render() {
@@ -296,45 +492,11 @@ function bindRange(element, key) {
   });
 }
 
-function normaliseHex(value) {
-  const trimmed = value.trim();
-  if (!/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return null;
-  }
-  return trimmed.toLowerCase();
-}
-
-function bindColourPicker(picker, textInput, key) {
-  picker.addEventListener("input", function () {
-    state[key] = picker.value.toLowerCase();
-    render();
-  });
-
-  textInput.addEventListener("input", function () {
-    const colour = normaliseHex(textInput.value);
-
-    if (colour === null) {
-      textInput.setAttribute("aria-invalid", "true");
-      return;
-    }
-
-    state[key] = colour;
-    picker.value = colour;
-    textInput.setAttribute("aria-invalid", "false");
-    render();
-  });
-
-  textInput.addEventListener("blur", function () {
-    if (normaliseHex(textInput.value) === null) {
-      textInput.value = state[key].toUpperCase();
-      textInput.setAttribute("aria-invalid", "false");
-    }
-  });
-}
-
 function applyPreset(preset) {
   state.innerColour = preset.innerColour;
   state.outerColour = preset.outerColour;
+  syncFixedColourLightness();
+  renderedPlaneLightness = null;
   render();
 }
 
@@ -373,13 +535,15 @@ function syncFocusMode() {
 
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
+  syncFixedColourLightness();
+  renderedPlaneLightness = null;
   render();
 }
 
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 7,
+    version: 8,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
@@ -491,16 +655,14 @@ bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
 bindRange(elements.crenellationShape, "crenellationShape");
 
-bindColourPicker(
-  elements.innerColour,
-  elements.innerHex,
-  "innerColour",
-);
-bindColourPicker(
-  elements.outerColour,
-  elements.outerHex,
-  "outerColour",
-);
+syncFixedColourLightness();
+bindColourPlane();
+elements.editInner.addEventListener("click", function () {
+  selectColour("innerColour");
+});
+elements.editOuter.addEventListener("click", function () {
+  selectColour("outerColour");
+});
 
 elements.presetBlueGreen.addEventListener("click", function () {
   applyPreset(PRESETS.blueGreen);

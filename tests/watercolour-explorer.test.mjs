@@ -54,8 +54,8 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("openPairwiseTest"));
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
-  assert.match(html, /href="watercolour\.css\?v=4"/);
-  assert.match(html, /src="watercolour\.js\?v=11"/);
+  assert.match(html, /href="watercolour\.css\?v=5"/);
+  assert.match(html, /src="watercolour\.js\?v=12"/);
 });
 
 
@@ -178,4 +178,31 @@ test("shape slider is limited to the smooth circle-square family", async () => {
   assert.ok(!geometry.includes("greekCrossRadiusFactor"));
   assert.ok(!geometry.includes("GREEK_CROSS"));
   assert.match(geometry, /exponent = 2 \+ 2 \* t/);
+});
+
+
+test("colour exploration uses a nearby two-dimensional OKLab plane", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../docs/watercolour/watercolour.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /class="colour-dock"/);
+  assert.match(html, /id="colour-plane"/);
+  assert.match(html, /id="edit-inner"/);
+  assert.match(html, /id="edit-outer"/);
+  assert.ok(!html.includes('type="color"'));
+  assert.ok(!html.includes('id="inner-hex"'));
+  assert.match(js, /function rgbToOklab/);
+  assert.match(js, /function gamutMappedOklab/);
+  assert.match(js, /function bindColourPlane/);
+  assert.match(css, /\.colour-plane[\s\S]*touch-action: none/);
 });
