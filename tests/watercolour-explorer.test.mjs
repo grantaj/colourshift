@@ -78,7 +78,7 @@ test("explorer renders ribbons as layered strokes rather than offset polygons", 
 
 
 
-test("explorer exposes crenellation shape while preserving current geometry at 0.50", async () => {
+test("explorer exposes crenellation shape with a sine reference at 0.50", async () => {
   const html = await readFile(
     new URL("../docs/watercolour/index.html", import.meta.url),
     "utf8",
@@ -98,9 +98,9 @@ test("explorer exposes crenellation shape while preserving current geometry at 0
   assert.match(html, /value="0\.50"/);
   assert.match(js, /crenellationShape: 0\.5/);
   assert.match(js, /LIMITS\.crenellationShape/);
-  assert.match(geometry, /function cardinalSpline/);
+  assert.match(geometry, /export function crenellationWave/);
   assert.match(geometry, /crenellationShape = 0\.5/);
-  assert.match(geometry, /tangentScale/);
+  assert.match(geometry, /Math\.sin\(phase\)/);
 });
 
 
