@@ -316,6 +316,38 @@ body.focus-mode #stimulus {
   }
 
   .controls-panel {
-    padding: 0.95rem;
+    padding: 0.8rem;
+  }
+
+  .control + .control,
+  .colour-control + .colour-control {
+    margin-top: 0.7rem;
+  }
+
+  .control-heading-stacked {
+    flex-direction: row;
+    align-items: baseline;
+  }
+
+  fieldset + fieldset {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+  }
+
+  legend {
+    margin-bottom: 0.6rem;
+  }
+
+  input[type="range"] {
+    display: block;
+    width: 76%;
+    min-height: 34px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
   }
 }

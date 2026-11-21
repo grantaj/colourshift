@@ -172,24 +172,19 @@ function normalAtArcFraction(shape, arcFractions, fraction, step) {
   return [ty / length, -tx / length];
 }
 
-function cardinalSpline(p0, p1, p2, p3, t, tangentScale) {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  const h00 = 2 * t3 - 3 * t2 + 1;
-  const h10 = t3 - 2 * t2 + t;
-  const h01 = -2 * t3 + 3 * t2;
-  const h11 = t3 - t2;
+function crenellationCoefficient(crenellationShape) {
+  if (crenellationShape <= 0.5) {
+    return -0.16 * (0.5 - crenellationShape) / 0.25;
+  }
+  return 0.10 * (crenellationShape - 0.5) / 0.75;
+}
 
-  return [0, 1].map(function (axis) {
-    const m1 = tangentScale * (p2[axis] - p0[axis]);
-    const m2 = tangentScale * (p3[axis] - p1[axis]);
-    return (
-      h00 * p1[axis] +
-      h10 * m1 +
-      h01 * p2[axis] +
-      h11 * m2
-    );
-  });
+export function crenellationWave(phase, crenellationShape = 0.5) {
+  const coefficient = crenellationCoefficient(crenellationShape);
+  return (
+    Math.sin(phase) +
+    coefficient * Math.sin(3 * phase)
+  ) / (1 - coefficient);
 }
 
 export function sampleBoundary(
@@ -201,51 +196,25 @@ export function sampleBoundary(
   crenellationShape = 0.5,
 ) {
   const waveCount = Math.max(1, Math.round(waves));
-  const controlCount = 2 * waveCount;
-  const normalStep = 1 / (controlCount * 32);
-  const controls = [];
+  const normalStep = 2 / arcFractions.length;
 
-  for (let index = 0; index < controlCount; index += 1) {
-    const fraction = index / controlCount;
-    const base = interpolateBasePoint(shape, arcFractions, fraction);
+  return arcFractions.map(function (arcFraction) {
+    const base = interpolateBasePoint(shape, arcFractions, arcFraction);
     const normal = normalAtArcFraction(
       shape,
       arcFractions,
-      fraction,
+      arcFraction,
       normalStep,
     );
-    const displacement = (index % 2 === 0 ? 1 : -1) * amplitude;
+    const phase = 2 * Math.PI * waveCount * arcFraction;
+    const displacement =
+      amplitude * crenellationWave(phase, crenellationShape);
 
-    controls.push([
+    return [
       radius * base[0] + displacement * normal[0],
       radius * base[1] + displacement * normal[1],
-    ]);
-  }
-
-  const points = [];
-  const sampleCount = arcFractions.length;
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const position = (index * controlCount) / sampleCount;
-    const segment = Math.floor(position);
-    const t = position - segment;
-    const p0 = controls[(segment - 1 + controlCount) % controlCount];
-    const p1 = controls[segment % controlCount];
-    const p2 = controls[(segment + 1) % controlCount];
-    const p3 = controls[(segment + 2) % controlCount];
-    points.push(
-      cardinalSpline(
-        p0,
-        p1,
-        p2,
-        p3,
-        t,
-        crenellationShape,
-      ),
-    );
-  }
-
-  return points;
+    ];
+  });
 }
 
 function unitVector(x, y) {

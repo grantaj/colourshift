@@ -7,7 +7,7 @@ import {
   sampleBoundary,
   closedPath,
   translatePoints,
-} from "./geometry.mjs?v=2";
+} from "./geometry.mjs?v=3";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const VIEWBOX_SIZE = 760;
@@ -212,12 +212,10 @@ function syncControlsFromState() {
   const shapeOffset = state.crenellationShape - 0.5;
   const shapeLabel =
     Math.abs(shapeOffset) < 0.005
-      ? "Current · 0.50"
+      ? "Sine · 0.50"
       : state.crenellationShape < 0.5
         ? "Sharper · " + formatValue(state.crenellationShape, 2)
-        : state.crenellationShape <= 1
-          ? "Rounder · " + formatValue(state.crenellationShape, 2)
-          : "Scalloped · " + formatValue(state.crenellationShape, 2);
+        : "Rounder · " + formatValue(state.crenellationShape, 2);
   elements.crenellationShapeValue.value = shapeLabel;
 
   const count = 4096;
@@ -387,7 +385,7 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 5,
+    version: 6,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
