@@ -167,6 +167,49 @@ export function crenellationWave(phase, crenellationShape = 0.5) {
   return Math.tanh(steepness * sine) / Math.tanh(steepness);
 }
 
+// Curvature is measured on the unscaled base curve (positive for convex
+// contours). Multiplying by amplitude/radius gives the local fractional
+// stretch or compression of a displaced crest or valley plateau.
+function baseCurvature(shape, arcFractions, fraction) {
+  const step = 2 / arcFractions.length;
+  const previous = interpolateBasePoint(shape, arcFractions, fraction - step);
+  const centre = interpolateBasePoint(shape, arcFractions, fraction);
+  const next = interpolateBasePoint(shape, arcFractions, fraction + step);
+  const ax = centre[0] - previous[0];
+  const ay = centre[1] - previous[1];
+  const bx = next[0] - centre[0];
+  const by = next[1] - centre[1];
+  const chord = Math.hypot(next[0] - previous[0], next[1] - previous[1]);
+  const denominator = Math.hypot(ax, ay) * Math.hypot(bx, by) * chord;
+  return denominator < 1e-12
+    ? 0
+    : Math.max(0, 2 * (ax * by - ay * bx) / denominator);
+}
+
+// Primitive of the shape waveform on one period. Its integral over a whole
+// period is zero by half-wave antisymmetry. The table is built once per
+// boundary, not per vertex.
+function wavePrimitiveTable(crenellationShape) {
+  const samples = 512;
+  const step = 2 * Math.PI / samples;
+  const integral = new Float64Array(samples + 1);
+  let previous = crenellationWave(0, crenellationShape);
+  for (let i = 1; i <= samples; i += 1) {
+    const current = crenellationWave(i * step, crenellationShape);
+    integral[i] = integral[i - 1] + step * (previous + current) / 2;
+    previous = current;
+  }
+  integral[samples] = 0;
+  return integral;
+}
+
+function interpolatePrimitive(phase, table) {
+  const position = phase * (table.length - 1) / (2 * Math.PI);
+  const index = Math.min(table.length - 2, Math.floor(position));
+  const t = position - index;
+  return table[index] + t * (table[index + 1] - table[index]);
+}
+
 export function sampleBoundary(
   radius,
   amplitude,
@@ -178,6 +221,32 @@ export function sampleBoundary(
   const waveCount = Math.max(1, Math.round(waves));
   const normalStep = 2 / arcFractions.length;
 
+  // Outward crests of a curved contour are physically longer than inward
+  // valleys, even with a perfectly odd waveform. Correct the phase speed
+  // within each wave so that its *drawn* crest and valley plateau lengths
+  // are approximately equal. One compensation per cycle keeps phase
+  // continuous and fixes the number of waves and their endpoints.
+  const strength = smoothstep01((crenellationShape - 0.5) / 0.75);
+  const compensate = strength > 0 && amplitude > 0;
+  const primitive = compensate ? wavePrimitiveTable(crenellationShape) : null;
+  const phaseCompensation = [];
+
+  if (compensate) {
+    for (let cycle = 0; cycle < waveCount; cycle += 1) {
+      const crest = baseCurvature(
+        shape, arcFractions, (cycle + 0.25) / waveCount,
+      ) * amplitude / radius;
+      const valley = baseCurvature(
+        shape, arcFractions, (cycle + 0.75) / waveCount,
+      ) * amplitude / radius;
+
+      // At a plateau, ds_drawn ≈ (1 +/- curvature*amplitude) ds_base.
+      // This phase-speed ratio equalises positive and negative plateaus.
+      const correction = (crest + valley) / (2 + crest - valley);
+      phaseCompensation.push(clamp(correction * strength, 0, 0.75));
+    }
+  }
+
   return arcFractions.map(function (arcFraction) {
     const base = interpolateBasePoint(shape, arcFractions, arcFraction);
     const normal = normalAtArcFraction(
@@ -187,8 +256,14 @@ export function sampleBoundary(
       normalStep,
     );
     const phase = 2 * Math.PI * waveCount * arcFraction;
+    const cycle = Math.min(waveCount - 1, Math.floor(phase / (2 * Math.PI)));
+    const localPhase = phase - 2 * Math.PI * cycle;
+    const correctedPhase = compensate
+      ? localPhase +
+        phaseCompensation[cycle] * interpolatePrimitive(localPhase, primitive)
+      : localPhase;
     const displacement =
-      amplitude * crenellationWave(phase, crenellationShape);
+      amplitude * crenellationWave(correctedPhase, crenellationShape);
 
     return [
       radius * base[0] + displacement * normal[0],
