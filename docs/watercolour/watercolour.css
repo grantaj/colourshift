@@ -97,10 +97,21 @@ h1 {
   gap: 0.42rem;
 }
 
-.colour-target.active,
 .preset-button.active {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* The selected editing target needs to be unmistakable before and after JS starts. */
+.colour-target[aria-pressed="true"] {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent-dark);
+  box-shadow: 0 0 0 2px rgba(47, 95, 87, 0.22);
+}
+
+.colour-target[aria-pressed="true"] .target-swatch {
+  border-color: rgba(255, 255, 255, 0.92);
 }
 
 .target-swatch {
