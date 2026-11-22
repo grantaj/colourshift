@@ -7,7 +7,7 @@
   <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
-  <link rel="stylesheet" href="watercolour.css?v=7" />
+  <link rel="stylesheet" href="watercolour.css?v=8" />
 </head>
 <body>
   <header class="site-header">
@@ -61,7 +61,7 @@
         </div>
         <div class="colour-lightness">
           <div class="control-heading">
-            <label for="colour-lightness">Lightness</label>
+            <label id="colour-lightness-label" for="colour-lightness">Inner lightness</label>
             <output id="colour-lightness-value" for="colour-lightness">0.75</output>
           </div>
           <input
@@ -159,6 +159,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=19"></script>
+  <script type="module" src="watercolour.js?v=20"></script>
 </body>
 </html>
