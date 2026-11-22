@@ -548,9 +548,9 @@ function presetColourState(hex) {
   };
 }
 
-function applyPreset(preset) {
-  const inner = presetColourState(preset.innerColour);
-  const outer = presetColourState(preset.outerColour);
+function setCompleteColourState(innerHex, outerHex) {
+  const inner = presetColourState(innerHex);
+  const outer = presetColourState(outerHex);
 
   state.innerColour = inner.hex;
   state.outerColour = outer.hex;
@@ -558,7 +558,10 @@ function applyPreset(preset) {
   fixedColourLightness.outerColour = outer.lightness;
   colourPlanePosition.innerColour = inner.position;
   colourPlanePosition.outerColour = outer.position;
+}
 
+function applyPreset(preset) {
+  setCompleteColourState(preset.innerColour, preset.outerColour);
   renderedPlaneLightness = null;
   render();
 }
@@ -598,8 +601,7 @@ function syncFocusMode() {
 
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
-  syncFixedColourLightness();
-  syncPlanePositionsFromColours();
+  setCompleteColourState(state.innerColour, state.outerColour);
   renderedPlaneLightness = null;
   render();
 }
@@ -607,7 +609,7 @@ function resetExplorer() {
 function exportMetadata() {
   return {
     tool: "ColourShift Watercolour Explorer",
-    version: 9,
+    version: 10,
     topology: "annular-field-double-boundary",
     outerFieldRadius: state.radius,
     fieldWidth: state.fieldWidth,
@@ -719,8 +721,7 @@ bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
 bindRange(elements.crenellationShape, "crenellationShape");
 
-syncFixedColourLightness();
-syncPlanePositionsFromColours();
+setCompleteColourState(state.innerColour, state.outerColour);
 bindColourPlane();
 elements.colourLightness.addEventListener("input", function () {
   setSelectedLightness(elements.colourLightness.value);
