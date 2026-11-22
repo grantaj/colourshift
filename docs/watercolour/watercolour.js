@@ -536,11 +536,29 @@ function bindRange(element, key) {
   });
 }
 
+function presetColourState(hex) {
+  const lab = rgbToOklab(hexToRgb(hex));
+  return {
+    hex,
+    lightness: lab.L,
+    position: {
+      x: clamp((lab.a / OKLAB_RANGE + 1) / 2, 0, 1),
+      y: clamp((1 - lab.b / OKLAB_RANGE) / 2, 0, 1),
+    },
+  };
+}
+
 function applyPreset(preset) {
-  state.innerColour = preset.innerColour;
-  state.outerColour = preset.outerColour;
-  syncFixedColourLightness();
-  syncPlanePositionsFromColours();
+  const inner = presetColourState(preset.innerColour);
+  const outer = presetColourState(preset.outerColour);
+
+  state.innerColour = inner.hex;
+  state.outerColour = outer.hex;
+  fixedColourLightness.innerColour = inner.lightness;
+  fixedColourLightness.outerColour = outer.lightness;
+  colourPlanePosition.innerColour = inner.position;
+  colourPlanePosition.outerColour = outer.position;
+
   renderedPlaneLightness = null;
   render();
 }
