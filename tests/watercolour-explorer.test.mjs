@@ -238,3 +238,17 @@ test("colour-plane marker preserves the dragged position after gamut mapping", a
   assert.match(js, /colourPlanePosition\[selectedColourKey\] = \{ x, y \}/);
   assert.match(js, /const position = colourPlanePosition\[selectedColourKey\]/);
 });
+
+
+test("presets set colour, plane position, and lightness together", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /function presetColourState/);
+  assert.match(js, /fixedColourLightness\.innerColour = inner\.lightness/);
+  assert.match(js, /fixedColourLightness\.outerColour = outer\.lightness/);
+  assert.match(js, /colourPlanePosition\.innerColour = inner\.position/);
+  assert.match(js, /colourPlanePosition\.outerColour = outer\.position/);
+});
