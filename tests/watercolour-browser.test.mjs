@@ -23,9 +23,10 @@ const PROBE = [
   ' const initialLightness = Number(document.getElementById("colour-lightness").value);',
   ' const innerButton = document.getElementById("edit-inner");',
   ' const outerButton = document.getElementById("edit-outer");',
-  ' const chosen = (button) => button.getAttribute("aria-pressed") === "true";',
-  ' const dotOpacity = (button) => getComputedStyle(button.querySelector(".target-selection-dot"), "::after").opacity;',
-  ' const initialInnerSelected = chosen(innerButton) && !chosen(outerButton) && dotOpacity(innerButton) === "1" && dotOpacity(outerButton) === "0";',
+  ' const chosen = (input) => input.checked;',
+  ' const radioCount = document.querySelectorAll(\'input[type="radio"][name="edit-colour"]\').length;',
+  ' const customDots = document.querySelectorAll(".target-selection-dot").length;',
+  ' const initialInnerSelected = innerButton.type === "radio" && outerButton.type === "radio" && chosen(innerButton) && !chosen(outerButton);',
   ' const innerStroke = () => document.getElementById("inner-inducing").getAttribute("stroke");',
   ' const outerStroke = () => document.getElementById("outer-barrier").getAttribute("stroke");',
   ' const originalInnerStroke = innerStroke();',
@@ -40,7 +41,7 @@ const PROBE = [
   ' const editedInner = innerStroke();',
   ' const innerOnly = editedInner !== originalInnerStroke && outerStroke() === originalOuterStroke && chosen(innerButton) && !chosen(outerButton);',
   ' outerButton.click();',
-  ' const outerSelected = chosen(outerButton) && !chosen(innerButton) && dotOpacity(outerButton) === "1" && dotOpacity(innerButton) === "0";',
+  ' const outerSelected = chosen(outerButton) && !chosen(innerButton);',
   ' const innerBeforeOuterEdit = innerStroke();',
   ' slider.value = "0.82";',
   ' slider.dispatchEvent(new Event("input", { bubbles: true }));',
@@ -53,9 +54,9 @@ const PROBE = [
   '   populated: before.every(c => /^#[0-9a-f]{6}$/.test(c)),',
   '   changedOnOuter: before.some((c, i) => c !== outer[i]),',
   '   restored: before.length === again.length && before.every((c, i) => c === again[i]),',
-  '   initialLightness, initialInnerSelected, innerOnly, outerSelected, outerOnly, lightnessRestored, resetCorrect,',
+  '   initialLightness, initialInnerSelected, radioCount, customDots, innerOnly, outerSelected, outerOnly, lightnessRestored, resetCorrect,',
   '   firstWidth, painted,',
-  '   selectedInner: document.getElementById("edit-inner").getAttribute("aria-pressed") === "true"',
+  '   selectedInner: document.getElementById("edit-inner").checked',
   ' };',
   ' const result = document.createElement("pre");',
   ' result.id = "browser-probe-result"; result.textContent = JSON.stringify(report);',
@@ -135,9 +136,11 @@ test("Chromium paints the default chooser and preserves it across Outer → Inne
   assert.ok(report.changedOnOuter);
   assert.ok(report.restored);
   assert.ok(report.selectedInner);
-  assert.ok(report.initialInnerSelected, "Inner should have the visible blue dot on initial page load");
+  assert.ok(report.initialInnerSelected, "Native Inner radio must start checked");
+  assert.equal(report.radioCount, 2, "There must be exactly two native radio inputs");
+  assert.equal(report.customDots, 0, "No simulated selection markers allowed");
   assert.ok(report.innerOnly, "Lightness slider should change Inner but not Outer");
-  assert.ok(report.outerSelected, "Outer should have the blue dot after selection");
+  assert.ok(report.outerSelected, "Outer native radio must become checked on selection");
   assert.ok(report.outerOnly, "Lightness slider should change Outer but not Inner");
   assert.ok(report.lightnessRestored, "Switching back to Inner should restore Inner slider position");
   assert.ok(report.resetCorrect, "Reset should restore both colours and select Inner");

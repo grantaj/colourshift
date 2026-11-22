@@ -7,7 +7,7 @@
   <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
-  <link rel="stylesheet" href="watercolour.css?v=8" />
+  <link rel="stylesheet" href="watercolour.css?v=9" />
 </head>
 <body>
   <header class="site-header">
@@ -36,17 +36,17 @@
 
       <section class="colour-dock" aria-label="Colour explorer">
         <div class="colour-dock-heading">
-          <div class="colour-targets" role="group" aria-label="Colour to edit">
-            <button id="edit-inner" class="colour-target active" type="button" aria-pressed="true">
-              <span class="target-selection-dot" aria-hidden="true"></span>
+          <div class="colour-targets" role="radiogroup" aria-label="Colour to edit">
+            <label class="colour-target" for="edit-inner">
+              <input id="edit-inner" type="radio" name="edit-colour" value="innerColour" checked />
               <span id="inner-swatch" class="target-swatch" aria-hidden="true"></span>
               Inner
-            </button>
-            <button id="edit-outer" class="colour-target" type="button" aria-pressed="false">
-              <span class="target-selection-dot" aria-hidden="true"></span>
+            </label>
+            <label class="colour-target" for="edit-outer">
+              <input id="edit-outer" type="radio" name="edit-colour" value="outerColour" />
               <span id="outer-swatch" class="target-swatch" aria-hidden="true"></span>
               Outer
-            </button>
+            </label>
           </div>
         </div>
 
@@ -161,6 +161,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=20"></script>
+  <script type="module" src="watercolour.js?v=21"></script>
 </body>
 </html>

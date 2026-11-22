@@ -102,48 +102,20 @@ h1 {
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-/* The blue selection dot is persistent, including before the script runs. */
-.target-selection-dot {
-  display: grid;
-  place-items: center;
+/* Native radios expose their checked state without a simulated selection dot. */
+.colour-target input[type="radio"] {
+  margin: 0;
   width: 16px;
   height: 16px;
-  border: 1.5px solid #7b7f87;
-  border-radius: 50%;
   flex: 0 0 auto;
-}
-
-.target-selection-dot::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #2563eb;
-  opacity: 0;
-}
-
-.colour-target[aria-pressed="true"] {
-  border-color: #2563eb;
-  box-shadow: inset 0 0 0 1px #2563eb;
-}
-
-.colour-target[aria-pressed="true"] .target-selection-dot {
-  border-color: #2563eb;
-}
-
-.colour-target[aria-pressed="true"] .target-selection-dot::after {
-  opacity: 1;
-}
-
-.target-swatch {
-  border-color: rgba(255, 255, 255, 0.92);
+  accent-color: #2563eb;
 }
 
 .target-swatch {
   width: 0.9rem;
   height: 0.9rem;
   border: 1px solid rgba(0, 0, 0, 0.22);
-  border-radius: 50%;
+  border-radius: 3px;
 }
 
 .colour-plane-wrap {
