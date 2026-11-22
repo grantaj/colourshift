@@ -54,8 +54,8 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("openPairwiseTest"));
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
-  assert.match(html, /href="watercolour\.css\?v=9"/);
-  assert.match(html, /src="watercolour\.js\?v=21"/);
+  assert.match(html, /href="watercolour\.css\?v=10"/);
+  assert.match(html, /src="watercolour\.js\?v=22"/);
 });
 
 
@@ -403,4 +403,21 @@ test("lightness editing is isolated to selected colour and clearly labelled", as
   assert.match(js, /\[elements\.outerBarrier, elements\.innerBarrier\]/);
   assert.match(js, /function setSelectedLightness\(value\)[\s\S]*?syncSelectedColourOnly\(\)/);
   assert.match(js, /function resetExplorer\(\) \{\s*selectedColourKey = "innerColour"/);
+});
+
+test("native colour dock collapses without removing the colour state", async () => {
+  const html = await readFile(new URL("../docs/watercolour/index.html", import.meta.url), "utf8");
+  const js = await readFile(new URL("../docs/watercolour/watercolour.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../docs/watercolour/watercolour.css", import.meta.url), "utf8");
+
+  assert.match(html, /<details id="colour-dock" class="colour-dock"/);
+  assert.match(html, /<summary class="colour-dock-summary">/);
+  assert.match(html, /id="inner-summary-swatch"[^>]*background: #6ec66a/);
+  assert.match(html, /id="outer-summary-swatch"[^>]*background: #3155a4/);
+  assert.match(html, /<\/details>/);
+  assert.match(js, /elements\.innerSummarySwatch\.style\.background = state\.innerColour/);
+  assert.match(js, /elements\.outerSummarySwatch\.style\.background = state\.outerColour/);
+  assert.match(js, /window\.matchMedia\("\(min-width: 901px\)"\)\.matches/);
+  assert.match(css, /\.colour-dock-summary \{/);
+  assert.ok(!js.includes("colourDock.addEventListener"), "folding uses native disclosure, not a second state machine");
 });
