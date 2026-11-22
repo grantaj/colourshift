@@ -55,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=7"/);
-  assert.match(html, /src="watercolour\.js\?v=17"/);
+  assert.match(html, /src="watercolour\.js\?v=18"/);
 });
 
 
@@ -348,4 +348,16 @@ test("initial and switched colour planes use the same synchronous lightness rend
   assert.match(js, /function syncColourDock\(\)[\s\S]*drawColourPlane\(\)/);
   assert.match(js, /function selectColour\(key\)[\s\S]*syncColourDock\(\)/);
   assert.ok(!js.includes("requestAnimationFrame"));
+});
+
+
+test("colour plane has no cached lightness state", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.ok(!js.includes("renderedPlaneLightness"));
+  assert.match(js, /function syncColourDock\(\)[\s\S]*drawColourPlane\(\)/);
+  assert.match(js, /function drawColourPlane\(\)[\s\S]*fixedColourLightness\[selectedColourKey\]/);
 });

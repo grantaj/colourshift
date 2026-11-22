@@ -52,7 +52,6 @@ const DEFAULT_STATE = Object.freeze({
 const state = { ...DEFAULT_STATE };
 const OKLAB_RANGE = 0.25;
 let selectedColourKey = "innerColour";
-let renderedPlaneLightness = null;
 const fixedColourLightness = {
   innerColour: null,
   outerColour: null,
@@ -190,13 +189,9 @@ function ensureColourPlaneCells() {
   }
 }
 
-function drawColourPlane(force = false) {
+function drawColourPlane() {
   const lab = colourLab(selectedColourKey);
   const lightness = fixedColourLightness[selectedColourKey] ?? lab.L;
-  if (!force && renderedPlaneLightness !== null &&
-      Math.abs(renderedPlaneLightness - lightness) < 0.0005) {
-    return;
-  }
 
   ensureColourPlaneCells();
 
@@ -212,7 +207,6 @@ function drawColourPlane(force = false) {
     );
   }
 
-  renderedPlaneLightness = lightness;
 }
 
 function setColourPlaneMarkerPosition(x, y) {
@@ -259,7 +253,6 @@ function syncColourDock() {
 
 function selectColour(key) {
   selectedColourKey = key;
-  renderedPlaneLightness = null;
   syncColourDock();
 }
 
@@ -270,7 +263,6 @@ function setSelectedLightness(value) {
   state[selectedColourKey] = rgbToHex(
     gamutMappedOklab(L, lab.a, lab.b),
   );
-  renderedPlaneLightness = null;
   render();
 }
 
@@ -579,7 +571,6 @@ function setCompleteColourState(innerHex, outerHex) {
 
 function applyPreset(preset) {
   setCompleteColourState(preset.innerColour, preset.outerColour);
-  renderedPlaneLightness = null;
   render();
 }
 
@@ -619,7 +610,6 @@ function syncFocusMode() {
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
   setCompleteColourState(state.innerColour, state.outerColour);
-  renderedPlaneLightness = null;
   render();
 }
 
