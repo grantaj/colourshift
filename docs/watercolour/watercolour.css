@@ -60,9 +60,48 @@ h1 {
 
 .colour-dock {
   position: relative;
-  margin-top: 0.65rem;
-  padding: 0.75rem;
+  margin-top: 0.45rem;
+  padding: 0.25rem 0.75rem;
   border-top: 1px solid var(--line);
+}
+
+.colour-dock-summary {
+  display: list-item;
+  min-height: 34px;
+  line-height: 34px;
+  font-size: 0.88rem;
+  font-weight: 650;
+  cursor: pointer;
+  user-select: none;
+}
+
+.colour-dock-summary::marker {
+  color: var(--muted);
+}
+
+.colour-dock-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.colour-dock-current {
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.colour-summary-colour {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.colour-dock-content {
+  padding: 0.55rem 0 0.25rem;
 }
 
 .colour-dock-heading {
@@ -384,7 +423,7 @@ body.focus-mode #stimulus {
   }
 
   .colour-dock {
-    padding: 0.65rem 0.35rem 0.45rem;
+    padding: 0.15rem 0.5rem;
   }
 
   .colour-dock-heading {
