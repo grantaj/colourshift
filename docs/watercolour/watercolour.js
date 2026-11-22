@@ -474,13 +474,13 @@ function syncControlsFromState() {
   elements.amplitudeValue.value = formatValue(state.amplitude, 0);
 
   const shapeOffset = state.crenellationShape - 0.5;
-  const shapeLabel =
+  const crenellationLabel =
     Math.abs(shapeOffset) < 0.005
       ? "Sine · 0.50"
       : state.crenellationShape < 0.5
         ? "Sharper · " + formatValue(state.crenellationShape, 2)
         : "Flatter · " + formatValue(state.crenellationShape, 2);
-  elements.crenellationShapeValue.value = shapeLabel;
+  elements.crenellationShapeValue.value = crenellationLabel;
 
   const count = 4096;
   const arcMap = buildArcLengthMap(state.shape, count);
