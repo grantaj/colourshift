@@ -54,8 +54,8 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("openPairwiseTest"));
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
-  assert.match(html, /href="watercolour\.css\?v=8"/);
-  assert.match(html, /src="watercolour\.js\?v=20"/);
+  assert.match(html, /href="watercolour\.css\?v=9"/);
+  assert.match(html, /src="watercolour\.js\?v=21"/);
 });
 
 
@@ -388,11 +388,16 @@ test("lightness editing is isolated to selected colour and clearly labelled", as
   const js = await readFile(new URL("../docs/watercolour/watercolour.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../docs/watercolour/watercolour.css", import.meta.url), "utf8");
 
-  assert.match(html, /id="edit-inner" class="colour-target active"[^>]*aria-pressed="true"/);
-  assert.match(html, /id="edit-outer" class="colour-target"[^>]*aria-pressed="false"/);
+  assert.match(html, /<input id="edit-inner" type="radio" name="edit-colour" value="innerColour" checked \/>/);
+  assert.match(html, /<input id="edit-outer" type="radio" name="edit-colour" value="outerColour" \/>/);
+  assert.equal((html.match(/name="edit-colour"/g) || []).length, 2);
+  assert.equal((html.match(/name="edit-colour"[^>]*checked/g) || []).length, 1);
+  assert.ok(!html.includes("target-selection-dot"), "no simulated radio marker");
+  assert.ok(!css.includes("target-selection-dot"), "no duplicate CSS marker");
+  assert.match(css, /\.colour-target input\[type="radio"\]/);
+  assert.match(js, /elements\.editInner\.checked = selectedColourKey === "innerColour"/);
+  assert.match(js, /elements\.editOuter\.checked = selectedColourKey === "outerColour"/);
   assert.match(html, /id="colour-lightness-label" for="colour-lightness">Inner lightness/);
-  assert.match(html, /id="edit-inner"[^>]*aria-pressed="true"[\s\S]*?class="target-selection-dot"/);
-  assert.match(css, /\.colour-target\[aria-pressed="true"\] \.target-selection-dot::after \{\s*opacity: 1/);
   assert.match(js, /function syncSelectedColourOnly\(\)/);
   assert.match(js, /\["outerInducing", "innerInducing"\]|\[elements\.outerInducing, elements\.innerInducing\]/);
   assert.match(js, /\[elements\.outerBarrier, elements\.innerBarrier\]/);
