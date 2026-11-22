@@ -55,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=6"/);
-  assert.match(html, /src="watercolour\.js\?v=13"/);
+  assert.match(html, /src="watercolour\.js\?v=14"/);
 });
 
 
@@ -251,4 +251,22 @@ test("presets set colour, plane position, and lightness together", async () => {
   assert.match(js, /fixedColourLightness\.outerColour = outer\.lightness/);
   assert.match(js, /colourPlanePosition\.innerColour = inner\.position/);
   assert.match(js, /colourPlanePosition\.outerColour = outer\.position/);
+});
+
+
+test("initial colour controls use the same complete state as presets", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /function setCompleteColourState/);
+  assert.match(
+    js,
+    /setCompleteColourState\(state\.innerColour, state\.outerColour\);/,
+  );
+  assert.match(
+    js,
+    /setCompleteColourState\(preset\.innerColour, preset\.outerColour\);/,
+  );
 });
