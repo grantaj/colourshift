@@ -170,23 +170,8 @@ function syncPlanePositionsFromColours() {
 }
 
 function ensureColourPlaneCells() {
-  if (elements.colourPlane.childElementCount > 0) {
-    return;
-  }
-
-  const cells = 24;
-  const cellSize = 100 / cells;
-  for (let y = 0; y < cells; y += 1) {
-    for (let x = 0; x < cells; x += 1) {
-      const rect = document.createElementNS(SVG_NS, "rect");
-      rect.setAttribute("x", String(x * cellSize));
-      rect.setAttribute("y", String(y * cellSize));
-      rect.setAttribute("width", String(cellSize + 0.05));
-      rect.setAttribute("height", String(cellSize + 0.05));
-      rect.dataset.colourPlaneX = String(x);
-      rect.dataset.colourPlaneY = String(y);
-      elements.colourPlane.appendChild(rect);
-    }
+  if (elements.colourPlane.childElementCount !== 24 * 24) {
+    throw new Error("Colour plane markup is incomplete");
   }
 }
 
