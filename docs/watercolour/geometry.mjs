@@ -150,19 +150,12 @@ function normalAtArcFraction(shape, arcFractions, fraction, step) {
   return [ty / length, -tx / length];
 }
 
-function crenellationCoefficient(crenellationShape) {
-  if (crenellationShape <= 0.5) {
-    return -0.16 * (0.5 - crenellationShape) / 0.25;
-  }
-  return 0.10 * (crenellationShape - 0.5) / 0.75;
-}
-
 export function crenellationWave(phase, crenellationShape = 0.5) {
   const sine = Math.sin(phase);
 
   if (crenellationShape <= 0.5) {
     // Preserve the original sharper-than-sine end of the control.
-    const coefficient = crenellationCoefficient(crenellationShape);
+    const coefficient = -0.16 * (0.5 - crenellationShape) / 0.25;
     return (sine + coefficient * Math.sin(3 * phase)) / (1 - coefficient);
   }
 
