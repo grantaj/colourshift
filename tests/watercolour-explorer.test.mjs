@@ -55,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=7"/);
-  assert.match(html, /src="watercolour\.js\?v=16"/);
+  assert.match(html, /src="watercolour\.js\?v=17"/);
 });
 
 
@@ -315,7 +315,7 @@ test("initial colour controls visibly match the default inner colour before Java
 });
 
 
-test("colour plane renders without relying on canvas bitmap APIs", async () => {
+test("colour plane renders synchronously as inline SVG", async () => {
   const html = await readFile(
     new URL("../docs/watercolour/index.html", import.meta.url),
     "utf8",
@@ -324,28 +324,28 @@ test("colour plane renders without relying on canvas bitmap APIs", async () => {
     new URL("../docs/watercolour/watercolour.js", import.meta.url),
     "utf8",
   );
-  const css = await readFile(
-    new URL("../docs/watercolour/watercolour.css", import.meta.url),
-    "utf8",
-  );
 
-  assert.match(html, /<div[\s\S]*id="colour-plane"/);
+  assert.match(html, /<svg[\s\S]*id="colour-plane"/);
   assert.ok(!html.includes("<canvas"));
   assert.ok(!js.includes("getContext"));
   assert.ok(!js.includes("putImageData"));
-  assert.match(js, /encodeURIComponent\(svg\)/);
-  assert.match(js, /backgroundImage/);
-  assert.match(css, /\.colour-plane[\s\S]*linear-gradient/);
+  assert.ok(!js.includes("backgroundImage"));
+  assert.ok(!js.includes("encodeURIComponent(svg)"));
+  assert.match(js, /function ensureColourPlaneCells/);
+  assert.match(js, /createElementNS\(SVG_NS, "rect"\)/);
+  assert.match(js, /rect\.setAttribute\(\s*"fill"/);
 });
 
 
-test("initial colour plane is repainted after the first browser frame", async () => {
+
+
+test("initial and switched colour planes use the same synchronous lightness renderer", async () => {
   const js = await readFile(
     new URL("../docs/watercolour/watercolour.js", import.meta.url),
     "utf8",
   );
 
-  assert.match(js, /requestAnimationFrame\(function \(\)/);
-  assert.match(js, /drawColourPlane\(true\)/);
-  assert.match(js, /fixedColourLightness\[selectedColourKey\]/);
+  assert.match(js, /function syncColourDock\(\)[\s\S]*drawColourPlane\(\)/);
+  assert.match(js, /function selectColour\(key\)[\s\S]*syncColourDock\(\)/);
+  assert.ok(!js.includes("requestAnimationFrame"));
 });
