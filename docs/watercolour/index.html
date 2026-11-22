@@ -7,7 +7,7 @@
   <meta name="description" content="Interactive Watercolour Effect stimulus explorer." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter/index.css" />
-  <link rel="stylesheet" href="watercolour.css?v=9" />
+  <link rel="stylesheet" href="watercolour.css?v=10" />
 </head>
 <body>
   <header class="site-header">
@@ -34,7 +34,21 @@
         </svg>
       </div>
 
-      <section class="colour-dock" aria-label="Colour explorer">
+      <details id="colour-dock" class="colour-dock" aria-label="Colour selection">
+        <summary class="colour-dock-summary">
+          Colours
+          <span class="colour-dock-current" aria-hidden="true">
+            <span class="colour-summary-colour">
+              <span id="inner-summary-swatch" class="target-swatch" style="background: #6ec66a;"></span>
+              Inner
+            </span>
+            <span class="colour-summary-colour">
+              <span id="outer-summary-swatch" class="target-swatch" style="background: #3155a4;"></span>
+              Outer
+            </span>
+          </span>
+        </summary>
+        <div class="colour-dock-content">
         <div class="colour-dock-heading">
           <div class="colour-targets" role="radiogroup" aria-label="Colour to edit">
             <label class="colour-target" for="edit-inner">
@@ -80,7 +94,8 @@
           <button id="preset-blue-green" class="preset-button active" type="button">Blue / green</button>
           <button id="preset-red-yellow" class="preset-button" type="button">Red / yellow</button>
         </div>
-      </section>
+        </div>
+      </details>
     </section>
 
     <aside class="controls-panel" aria-label="Explorer controls">
@@ -161,6 +176,6 @@
     </aside>
   </main>
 
-  <script type="module" src="watercolour.js?v=21"></script>
+  <script type="module" src="watercolour.js?v=22"></script>
 </body>
 </html>
