@@ -239,16 +239,8 @@ function syncColourDock() {
   elements.colourLightness.value = String(selectedLightness);
   elements.colourLightnessValue.value = selectedLightness.toFixed(2);
 
-  elements.editInner.classList.toggle("active", selectedColourKey === "innerColour");
-  elements.editOuter.classList.toggle("active", selectedColourKey === "outerColour");
-  elements.editInner.setAttribute(
-    "aria-pressed",
-    String(selectedColourKey === "innerColour"),
-  );
-  elements.editOuter.setAttribute(
-    "aria-pressed",
-    String(selectedColourKey === "outerColour"),
-  );
+  elements.editInner.checked = selectedColourKey === "innerColour";
+  elements.editOuter.checked = selectedColourKey === "outerColour";
 
   drawColourPlane();
   updateColourPlaneMarker();
@@ -753,11 +745,15 @@ bindColourPlane();
 elements.colourLightness.addEventListener("input", function () {
   setSelectedLightness(elements.colourLightness.value);
 });
-elements.editInner.addEventListener("click", function () {
-  selectColour("innerColour");
+elements.editInner.addEventListener("change", function () {
+  if (elements.editInner.checked) {
+    selectColour("innerColour");
+  }
 });
-elements.editOuter.addEventListener("click", function () {
-  selectColour("outerColour");
+elements.editOuter.addEventListener("change", function () {
+  if (elements.editOuter.checked) {
+    selectColour("outerColour");
+  }
 });
 
 elements.presetBlueGreen.addEventListener("click", function () {
