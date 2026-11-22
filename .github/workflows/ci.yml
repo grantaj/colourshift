@@ -26,3 +26,4 @@ jobs:
       - run: uv build
       - run: node --check docs/watercolour/watercolour.js
       - run: node --test tests/watercolour-explorer.test.mjs
+      - run: node --test tests/watercolour-browser.test.mjs

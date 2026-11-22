@@ -55,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=7"/);
-  assert.match(html, /src="watercolour\.js\?v=18"/);
+  assert.match(html, /src="watercolour\.js\?v=19"/);
 });
 
 
@@ -360,4 +360,24 @@ test("colour plane has no cached lightness state", async () => {
   assert.ok(!js.includes("renderedPlaneLightness"));
   assert.match(js, /function syncColourDock\(\)[\s\S]*drawColourPlane\(\)/);
   assert.match(js, /function drawColourPlane\(\)[\s\S]*fixedColourLightness\[selectedColourKey\]/);
+});
+
+
+test("default colour plane is painted before JavaScript and remains live", async () => {
+  const html = await readFile(new URL("../docs/watercolour/index.html", import.meta.url), "utf8");
+  const js = await readFile(new URL("../docs/watercolour/watercolour.js", import.meta.url), "utf8");
+  const plane = html.match(/<svg\s+id="colour-plane"[\s\S]*?<\/svg>/)?.[0];
+  assert.ok(plane, "inline colour plane must exist");
+  const cells = [...plane.matchAll(/<rect\s+[^>]*data-colour-plane-x="(\d+)" data-colour-plane-y="(\d+)"[^>]*>/g)];
+  assert.equal(cells.length, 576, "render all 24×24 cells in HTML");
+  const points = new Set(cells.map(cell => cell[1] + "," + cell[2]));
+  assert.equal(points.size, 576, "cells must cover all 24×24 positions exactly once");
+  for (const [, x, y] of cells) {
+    assert.ok(Number(x) >= 0 && Number(x) < 24);
+    assert.ok(Number(y) >= 0 && Number(y) < 24);
+  }
+  assert.match(plane, /<rect[^>]*fill="#6aca00"[^>]*data-colour-plane-x="0" data-colour-plane-y="0"/);
+  assert.match(html, /id="colour-lightness"[^>]*[\s\S]*?value="0\.7495"/);
+  assert.match(js, /function drawColourPlane\(\)[\s\S]*?rect\.setAttribute\(\s*"fill"/);
+  assert.match(js, /function syncColourDock\(\)[\s\S]*?drawColourPlane\(\)/);
 });
