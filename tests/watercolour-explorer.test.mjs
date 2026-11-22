@@ -54,8 +54,8 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("openPairwiseTest"));
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
-  assert.match(html, /href="watercolour\.css\?v=6"/);
-  assert.match(html, /src="watercolour\.js\?v=14"/);
+  assert.match(html, /href="watercolour\.css\?v=7"/);
+  assert.match(html, /src="watercolour\.js\?v=15"/);
 });
 
 
@@ -312,4 +312,28 @@ test("initial colour controls visibly match the default inner colour before Java
     html,
     /id="colour-lightness-value"[^>]*>0\.75<\/output>/,
   );
+});
+
+
+test("colour plane renders without relying on canvas bitmap APIs", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../docs/watercolour/watercolour.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(html, /<div[\s\S]*id="colour-plane"/);
+  assert.ok(!html.includes("<canvas"));
+  assert.ok(!js.includes("getContext"));
+  assert.ok(!js.includes("putImageData"));
+  assert.match(js, /encodeURIComponent\(svg\)/);
+  assert.match(js, /backgroundImage/);
+  assert.match(css, /\.colour-plane[\s\S]*linear-gradient/);
 });

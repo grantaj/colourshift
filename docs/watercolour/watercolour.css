@@ -122,6 +122,10 @@ h1 {
   aspect-ratio: 1;
   border: 1px solid var(--line);
   border-radius: 10px;
+  background:
+    linear-gradient(135deg, #75c759 0%, #b9b9b9 50%, #ee7070 100%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   touch-action: none;
   cursor: crosshair;
 }

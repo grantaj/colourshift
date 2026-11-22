@@ -177,24 +177,35 @@ function drawColourPlane(force = false) {
     return;
   }
 
-  const canvas = elements.colourPlane;
-  const context = canvas.getContext("2d");
-  const image = context.createImageData(canvas.width, canvas.height);
+  const cells = 24;
+  const rects = [];
+  const cellSize = 100 / cells;
 
-  for (let y = 0; y < canvas.height; y += 1) {
-    const b = OKLAB_RANGE * (1 - 2 * y / (canvas.height - 1));
-    for (let x = 0; x < canvas.width; x += 1) {
-      const a = OKLAB_RANGE * (2 * x / (canvas.width - 1) - 1);
-      const rgb = gamutMappedOklab(lightness, a, b);
-      const offset = 4 * (y * canvas.width + x);
-      image.data[offset] = Math.round(clamp(rgb[0], 0, 1) * 255);
-      image.data[offset + 1] = Math.round(clamp(rgb[1], 0, 1) * 255);
-      image.data[offset + 2] = Math.round(clamp(rgb[2], 0, 1) * 255);
-      image.data[offset + 3] = 255;
+  for (let y = 0; y < cells; y += 1) {
+    const b = OKLAB_RANGE * (1 - 2 * (y + 0.5) / cells);
+    for (let x = 0; x < cells; x += 1) {
+      const a = OKLAB_RANGE * (2 * (x + 0.5) / cells - 1);
+      const colour = rgbToHex(gamutMappedOklab(lightness, a, b));
+      rects.push(
+        '<rect x="' + (x * cellSize) +
+        '" y="' + (y * cellSize) +
+        '" width="' + (cellSize + 0.05) +
+        '" height="' + (cellSize + 0.05) +
+        '" fill="' + colour + '"/>',
+      );
     }
   }
 
-  context.putImageData(image, 0, 0);
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" ' +
+    'preserveAspectRatio="none">' +
+    rects.join("") +
+    '</svg>';
+  elements.colourPlane.style.backgroundImage =
+    'url("data:image/svg+xml;charset=utf-8,' +
+    encodeURIComponent(svg) +
+    '")';
+
   renderedPlaneLightness = lightness;
 }
 
