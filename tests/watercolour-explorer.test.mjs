@@ -55,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=7"/);
-  assert.match(html, /src="watercolour\.js\?v=15"/);
+  assert.match(html, /src="watercolour\.js\?v=16"/);
 });
 
 
@@ -336,4 +336,16 @@ test("colour plane renders without relying on canvas bitmap APIs", async () => {
   assert.match(js, /encodeURIComponent\(svg\)/);
   assert.match(js, /backgroundImage/);
   assert.match(css, /\.colour-plane[\s\S]*linear-gradient/);
+});
+
+
+test("initial colour plane is repainted after the first browser frame", async () => {
+  const js = await readFile(
+    new URL("../docs/watercolour/watercolour.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(js, /requestAnimationFrame\(function \(\)/);
+  assert.match(js, /drawColourPlane\(true\)/);
+  assert.match(js, /fixedColourLightness\[selectedColourKey\]/);
 });
