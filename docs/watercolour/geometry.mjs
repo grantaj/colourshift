@@ -150,19 +150,21 @@ function normalAtArcFraction(shape, arcFractions, fraction, step) {
   return [ty / length, -tx / length];
 }
 
-function crenellationCoefficient(crenellationShape) {
-  if (crenellationShape <= 0.5) {
-    return -0.16 * (0.5 - crenellationShape) / 0.25;
-  }
-  return 0.10 * (crenellationShape - 0.5) / 0.75;
-}
-
 export function crenellationWave(phase, crenellationShape = 0.5) {
-  const coefficient = crenellationCoefficient(crenellationShape);
-  return (
-    Math.sin(phase) +
-    coefficient * Math.sin(3 * phase)
-  ) / (1 - coefficient);
+  const sine = Math.sin(phase);
+
+  if (crenellationShape <= 0.5) {
+    // Preserve the original sharper-than-sine end of the control.
+    const coefficient = -0.16 * (0.5 - crenellationShape) / 0.25;
+    return (sine + coefficient * Math.sin(3 * phase)) / (1 - coefficient);
+  }
+
+  // Morph smoothly from sine to a rounded square wave.
+  // tanh is odd, so crests and valleys flatten equally:
+  // wave(phase + PI) = -wave(phase). Dividing by tanh(steepness)
+  // keeps both the crest and valley at exactly +/-1.
+  const steepness = 2.6 * (crenellationShape - 0.5) / 0.75;
+  return Math.tanh(steepness * sine) / Math.tanh(steepness);
 }
 
 export function sampleBoundary(

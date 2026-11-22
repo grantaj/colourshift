@@ -17,6 +17,14 @@ const PROBE = [
   ' const plane = document.getElementById("colour-plane");',
   ' const fills = () => Array.from(plane.querySelectorAll("rect"), el => el.getAttribute("fill"));',
   ' const before = fills();',
+  ' const outerPathBefore = document.getElementById("outer-barrier").getAttribute("d");',
+  ' const innerPathBefore = document.getElementById("inner-barrier").getAttribute("d");',
+  ' const waveShape = document.getElementById("crenellation-shape");',
+  ' waveShape.value = "1.25";',
+  ' waveShape.dispatchEvent(new Event("input", { bubbles: true }));',
+  ' const bothBoundariesUpdated = document.getElementById("outer-barrier").getAttribute("d") !== outerPathBefore && document.getElementById("inner-barrier").getAttribute("d") !== innerPathBefore;',
+  ' const shapeLabelText = document.getElementById("crenellation-shape-value").value;',
+  ' const shapeLabelUpdated = shapeLabelText.includes("Flatter");',
   ' const first = plane.querySelector("rect");',
   ' const painted = first && getComputedStyle(first).fill;',
   ' const dock = document.getElementById("colour-dock");',
@@ -72,7 +80,7 @@ const PROBE = [
   '   changedOnOuter: before.some((c, i) => c !== outer[i]),',
   '   restored: before.length === again.length && before.every((c, i) => c === again[i]),',
   '   initialLightness, initialInnerSelected, radioCount, customDots, innerOnly, outerSelected, outerOnly, lightnessRestored, resetCorrect,',
-  '   mobile, initiallyFolded, foldedHeight, expandedHeight, expandedBySummary, geometryVisibleWithImage, foldedAfterEditing, reopenedPreservesColours, swatchCurrent,',
+  '   mobile, initiallyFolded, foldedHeight, expandedHeight, expandedBySummary, geometryVisibleWithImage, foldedAfterEditing, reopenedPreservesColours, swatchCurrent, bothBoundariesUpdated, shapeLabelUpdated, shapeLabelText,',
   '   firstWidth, painted,',
   '   selectedInner: document.getElementById("edit-inner").checked',
   ' };',
@@ -156,6 +164,8 @@ test("Chromium paints the default chooser and preserves it across Outer → Inne
   assert.ok(report.selectedInner);
   assert.ok(report.initialInnerSelected, "Native Inner radio must start checked");
   assert.ok(report.mobile, "Browser regression must use a mobile-width viewport");
+  assert.ok(report.bothBoundariesUpdated, "Crenellation slider should reshape both inner and outer ribbon boundaries");
+  assert.ok(report.shapeLabelUpdated, "Crenellation slider should report flatter crests and valleys, got " + JSON.stringify(report.shapeLabelText));
   assert.ok(report.initiallyFolded, "Colour picker should start folded on mobile");
   assert.ok(report.expandedBySummary, "Tapping Colours should expand the picker");
   assert.ok(report.expandedHeight > report.foldedHeight + 150, "Folding should reclaim substantial vertical space");
