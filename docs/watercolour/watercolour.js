@@ -7,7 +7,7 @@ import {
   sampleBoundary,
   closedPath,
   translatePoints,
-} from "./geometry.mjs?v=5";
+} from "./geometry.mjs?v=6";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const VIEWBOX_SIZE = 760;
