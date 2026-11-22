@@ -601,7 +601,8 @@ function syncFocusMode() {
 
 function resetExplorer() {
   Object.assign(state, DEFAULT_STATE);
-  initialiseColourControlsFromState();
+  setCompleteColourState(state.innerColour, state.outerColour);
+  renderedPlaneLightness = null;
   render();
 }
 
