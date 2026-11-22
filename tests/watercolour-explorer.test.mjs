@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   buildArcLengthMap,
+  crenellationWave,
   closedPath,
   minimumShapeFactor,
   superellipseRadiusFactor,
@@ -55,7 +56,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=10"/);
-  assert.match(html, /src="watercolour\.js\?v=22"/);
+  assert.match(html, /src="watercolour\.js\?v=23"/);
 });
 
 
@@ -154,7 +155,7 @@ test("explorer cache-busts geometry and mobile sliders leave scroll gutters", as
     "utf8",
   );
 
-  assert.match(js, /from "\.\/geometry\.mjs\?v=4"/);
+  assert.match(js, /from "\.\/geometry\.mjs\?v=5"/);
   assert.match(css, /@media \(max-width: 560px\)[\s\S]*input\[type="range"\][\s\S]*width: 76%/);
 });
 
@@ -420,4 +421,33 @@ test("native colour dock collapses without removing the colour state", async () 
   assert.match(js, /window\.matchMedia\("\(min-width: 901px\)"\)\.matches/);
   assert.match(css, /\.colour-dock-summary \{/);
   assert.ok(!js.includes("colourDock.addEventListener"), "folding uses native disclosure, not a second state machine");
+});
+
+
+test("crenellation rounds both crests and valleys into equal plateaus", () => {
+  const wave = (phase, shape) => crenellationWave(phase, shape);
+
+  // Midpoint is exactly sinusoidal, and maximum squaring preserves amplitude.
+  for (let index = 0; index < 25; index += 1) {
+    const phase = index * Math.PI / 12;
+    assert.ok(Math.abs(wave(phase, 0.5) - Math.sin(phase)) < 1e-12);
+  }
+
+  for (const shape of [0.25, 0.5, 0.75, 1.0, 1.25]) {
+    assert.ok(Math.abs(wave(Math.PI / 2, shape) - 1) < 1e-12);
+    assert.ok(Math.abs(wave(3 * Math.PI / 2, shape) + 1) < 1e-12);
+    // Signed half-cycle symmetry must hold all along the waveform, not only at extremes.
+    for (let index = 0; index < 80; index += 1) {
+      const phase = 2 * Math.PI * index / 80;
+      assert.ok(Math.abs(wave(phase + Math.PI, shape) + wave(phase, shape)) < 1e-12);
+      assert.ok(Math.abs(wave(phase, shape)) <= 1 + 1e-12);
+    }
+  }
+
+  // Broad flat tops and equally broad flat bottoms at maximum setting.
+  const shoulder = Math.PI / 3;
+  assert.ok(wave(shoulder, 1.25) > 0.98);
+  assert.ok(wave(shoulder + Math.PI, 1.25) < -0.98);
+  assert.ok(wave(shoulder, 1.25) > wave(shoulder, 0.5) + 0.10);
+  assert.ok(Math.abs(wave(shoulder, 1.25) + wave(shoulder + Math.PI, 1.25)) < 1e-12);
 });
