@@ -266,6 +266,17 @@ function setSelectedLightness(value) {
   );
   renderedPlaneLightness = null;
   render();
+
+window.requestAnimationFrame(function () {
+  renderedPlaneLightness = null;
+  drawColourPlane(true);
+  updateColourPlaneMarker();
+  elements.colourLightness.value = String(
+    fixedColourLightness[selectedColourKey],
+  );
+  elements.colourLightnessValue.value =
+    fixedColourLightness[selectedColourKey].toFixed(2);
+});
 }
 
 function setColourFromPlaneEvent(event) {
