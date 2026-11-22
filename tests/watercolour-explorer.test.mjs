@@ -55,7 +55,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=7"/);
-  assert.match(html, /src="watercolour\.js\?v=15"/);
+  assert.match(html, /src="watercolour\.js\?v=16"/);
 });
 
 
