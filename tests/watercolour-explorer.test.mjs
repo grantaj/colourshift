@@ -7,6 +7,7 @@ import {
   crenellationWave,
   closedPath,
   minimumShapeFactor,
+  sampleBoundary,
   superellipseRadiusFactor,
 } from "../docs/watercolour/geometry.mjs";
 
@@ -56,7 +57,7 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
   assert.match(html, /href="watercolour\.css\?v=10"/);
-  assert.match(html, /src="watercolour\.js\?v=23"/);
+  assert.match(html, /src="watercolour\.js\?v=24"/);
 });
 
 
@@ -155,7 +156,7 @@ test("explorer cache-busts geometry and mobile sliders leave scroll gutters", as
     "utf8",
   );
 
-  assert.match(js, /from "\.\/geometry\.mjs\?v=5"/);
+  assert.match(js, /from "\.\/geometry\.mjs\?v=6"/);
   assert.match(css, /@media \(max-width: 560px\)[\s\S]*input\[type="range"\][\s\S]*width: 76%/);
 });
 
@@ -450,4 +451,78 @@ test("crenellation rounds both crests and valleys into equal plateaus", () => {
   assert.ok(wave(shoulder + Math.PI, 1.25) < -0.98);
   assert.ok(wave(shoulder, 1.25) > wave(shoulder, 0.5) + 0.10);
   assert.ok(Math.abs(wave(shoulder, 1.25) + wave(shoulder + Math.PI, 1.25)) < 1e-12);
+});
+
+
+// Unlike the scalar wave, the rendered profile's plateaus are measured in
+// physical SVG distance. On a curved boundary an outward crest has more
+// arc-length than an inward valley for identical baseline phase intervals.
+function drawnPlateauLengthRatio(points, radius, amplitude, threshold = 0.95) {
+  let crest = 0;
+  let valley = 0;
+  for (let index = 0; index < points.length; index += 1) {
+    const a = points[index];
+    const b = points[(index + 1) % points.length];
+    const midpointRadius = (Math.hypot(...a) + Math.hypot(...b)) / 2;
+    const offset = (midpointRadius - radius) / amplitude;
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (offset >= threshold) crest += length;
+    if (offset <= -threshold) valley += length;
+  }
+  assert.ok(crest > 0 && valley > 0, "both kinds of plateau must be represented");
+  return crest / valley;
+}
+
+test("physical crests and valleys have similar drawn lengths on both circular ribbons", () => {
+  const fractions = buildArcLengthMap(0, 4096).fractions;
+  const amplitude = 15;
+  const shape = 1.25;
+
+  for (const [radius, waves] of [[110, 6], [220, 12]]) {
+    const uncorrected = fractions.map((f, index) => {
+      const theta = 2 * Math.PI * index / fractions.length;
+      const displacement = amplitude * crenellationWave(2 * Math.PI * waves * f, shape);
+      return [(radius + displacement) * Math.cos(theta), (radius + displacement) * Math.sin(theta)];
+    });
+    const corrected = sampleBoundary(radius, amplitude, waves, 0, fractions, shape);
+    const before = drawnPlateauLengthRatio(uncorrected, radius, amplitude);
+    const after = drawnPlateauLengthRatio(corrected, radius, amplitude);
+    assert.ok(before > 1.12, "baseline test must demonstrate visible width asymmetry");
+    assert.ok(Math.abs(after - 1) < 0.06,
+      `R=${radius}: geometric correction left crest/valley ratio ${after} (was ${before})`);
+    assert.ok(Math.abs(after - 1) < Math.abs(before - 1) / 3);
+  }
+});
+
+test("corrected waves remain finite, closed and smooth at wave boundaries", () => {
+  for (const shape of [0, 0.5, 1]) {
+    const fractions = buildArcLengthMap(shape, 4096).fractions;
+    for (const radius of [110, 220]) {
+      const points = sampleBoundary(radius, 15, 12, shape, fractions, 1.25);
+      assert.equal(points.length, fractions.length);
+      for (const point of points) {
+        assert.ok(point.every(Number.isFinite));
+      }
+      const lengths = points.map((point, index) => {
+        const next = points[(index + 1) % points.length];
+        return Math.hypot(point[0] - next[0], point[1] - next[1]);
+      });
+      const typical = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
+      const closingLength = lengths.at(-1);
+      assert.ok(closingLength < 6 * typical,
+        `shape=${shape} radius=${radius}: an artificial jump appeared at the closing seam`);
+    }
+  }
+});
+
+test("sine reference keeps original equal-phase sampling", () => {
+  const fractions = buildArcLengthMap(0, 4096).fractions;
+  const radius = 110;
+  const amplitude = 15;
+  const waves = 6;
+  const boundary = sampleBoundary(radius, amplitude, waves, 0, fractions, 0.5);
+  for (let index = 0; index < fractions.length; index += 37) {
+    const expectedRadius = radius + amplitude * Math.sin(2 * Math.PI * waves * fractions[index]);
+    assert.ok(Math.abs(Math.hypot(...boundary[index]) - expectedRadius) < 0.0001);
+  }
 });
