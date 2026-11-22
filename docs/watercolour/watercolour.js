@@ -479,7 +479,7 @@ function syncControlsFromState() {
       ? "Sine · 0.50"
       : state.crenellationShape < 0.5
         ? "Sharper · " + formatValue(state.crenellationShape, 2)
-        : "Rounder · " + formatValue(state.crenellationShape, 2);
+        : "Flatter · " + formatValue(state.crenellationShape, 2);
   elements.crenellationShapeValue.value = shapeLabel;
 
   const count = 4096;
