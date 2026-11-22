@@ -292,3 +292,24 @@ test("startup, reset, and presets share the complete colour-state helper", async
   );
   assert.ok(!js.includes("initialiseColourControlsFromState"));
 });
+
+
+test("initial colour controls visibly match the default inner colour before JavaScript runs", async () => {
+  const html = await readFile(
+    new URL("../docs/watercolour/index.html", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    html,
+    /id="colour-plane-marker"[^>]*left: 25\.513%; top: 31\.543%/,
+  );
+  assert.match(
+    html,
+    /id="colour-lightness"[^>]*[\s\S]*?value="0\.7495"/,
+  );
+  assert.match(
+    html,
+    /id="colour-lightness-value"[^>]*>0\.75<\/output>/,
+  );
+});
