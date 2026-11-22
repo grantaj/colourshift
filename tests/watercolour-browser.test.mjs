@@ -19,6 +19,17 @@ const PROBE = [
   ' const before = fills();',
   ' const first = plane.querySelector("rect");',
   ' const painted = first && getComputedStyle(first).fill;',
+  ' const dock = document.getElementById("colour-dock");',
+  ' const summary = dock.querySelector("summary");',
+  ' const mobile = matchMedia("(max-width: 900px)").matches;',
+  ' const initiallyFolded = !dock.open;',
+  ' const imageBottom = document.getElementById("stage").getBoundingClientRect().bottom;',
+  ' const geometryTop = document.getElementById("radius").getBoundingClientRect().top;',
+  ' const geometryVisibleWithImage = geometryTop < innerHeight && imageBottom < geometryTop;',
+  ' const foldedHeight = dock.getBoundingClientRect().height;',
+  ' summary.click();',
+  ' const expandedBySummary = dock.open;',
+  ' const expandedHeight = dock.getBoundingClientRect().height;',
   ' const firstWidth = first && first.getBoundingClientRect().width;',
   ' const initialLightness = Number(document.getElementById("colour-lightness").value);',
   ' const innerButton = document.getElementById("edit-inner");',
@@ -39,6 +50,7 @@ const PROBE = [
   ' slider.value = "0.45";',
   ' slider.dispatchEvent(new Event("input", { bubbles: true }));',
   ' const editedInner = innerStroke();',
+  ' const innerSummaryAfterEdit = getComputedStyle(document.getElementById("inner-summary-swatch")).backgroundColor;',
   ' const innerOnly = editedInner !== originalInnerStroke && outerStroke() === originalOuterStroke && chosen(innerButton) && !chosen(outerButton);',
   ' outerButton.click();',
   ' const outerSelected = chosen(outerButton) && !chosen(innerButton);',
@@ -48,6 +60,11 @@ const PROBE = [
   ' const outerOnly = outerStroke() !== originalOuterStroke && innerStroke() === innerBeforeOuterEdit;',
   ' innerButton.click();',
   ' const lightnessRestored = Math.abs(Number(slider.value) - 0.45) < 0.006;',
+  ' const swatchCurrent = getComputedStyle(document.getElementById("inner-summary-swatch")).backgroundColor === innerSummaryAfterEdit;',
+  ' summary.click();',
+  ' const foldedAfterEditing = !dock.open && dock.getBoundingClientRect().height < expandedHeight / 2;',
+  ' summary.click();',
+  ' const reopenedPreservesColours = dock.open && innerStroke() === editedInner && outerStroke() !== originalOuterStroke;',
   ' document.getElementById("reset").click();',
   ' const resetCorrect = chosen(innerButton) && !chosen(outerButton) && innerStroke() === originalInnerStroke && outerStroke() === originalOuterStroke;',
   ' const report = { count: before.length,',
@@ -55,6 +72,7 @@ const PROBE = [
   '   changedOnOuter: before.some((c, i) => c !== outer[i]),',
   '   restored: before.length === again.length && before.every((c, i) => c === again[i]),',
   '   initialLightness, initialInnerSelected, radioCount, customDots, innerOnly, outerSelected, outerOnly, lightnessRestored, resetCorrect,',
+  '   mobile, initiallyFolded, foldedHeight, expandedHeight, expandedBySummary, geometryVisibleWithImage, foldedAfterEditing, reopenedPreservesColours, swatchCurrent,',
   '   firstWidth, painted,',
   '   selectedInner: document.getElementById("edit-inner").checked',
   ' };',
@@ -137,6 +155,14 @@ test("Chromium paints the default chooser and preserves it across Outer → Inne
   assert.ok(report.restored);
   assert.ok(report.selectedInner);
   assert.ok(report.initialInnerSelected, "Native Inner radio must start checked");
+  assert.ok(report.mobile, "Browser regression must use a mobile-width viewport");
+  assert.ok(report.initiallyFolded, "Colour picker should start folded on mobile");
+  assert.ok(report.expandedBySummary, "Tapping Colours should expand the picker");
+  assert.ok(report.expandedHeight > report.foldedHeight + 150, "Folding should reclaim substantial vertical space");
+  assert.ok(report.geometryVisibleWithImage, "First geometry slider should be visible beneath the image at phone height");
+  assert.ok(report.foldedAfterEditing, "Picker should collapse on second summary tap");
+  assert.ok(report.reopenedPreservesColours, "Folding must not reset edited colour state");
+  assert.ok(report.swatchCurrent, "Folded summary swatches must reflect the edited colour");
   assert.equal(report.radioCount, 2, "There must be exactly two native radio inputs");
   assert.equal(report.customDots, 0, "No simulated selection markers allowed");
   assert.ok(report.innerOnly, "Lightness slider should change Inner but not Outer");

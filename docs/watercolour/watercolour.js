@@ -231,6 +231,8 @@ function updateColourPlaneMarker() {
 function syncColourDock() {
   elements.innerSwatch.style.background = state.innerColour;
   elements.outerSwatch.style.background = state.outerColour;
+  elements.innerSummarySwatch.style.background = state.innerColour;
+  elements.outerSummarySwatch.style.background = state.outerColour;
   const selectedLightness =
     fixedColourLightness[selectedColourKey] ?? colourLab(selectedColourKey).L;
   elements.colourLightnessLabel.textContent = selectedColourKey === "innerColour"
@@ -331,6 +333,9 @@ const elements = {
   amplitudeValue: document.getElementById("amplitude-value"),
   wavesValue: document.getElementById("waves-value"),
   crenellationShapeValue: document.getElementById("crenellation-shape-value"),
+  colourDock: document.getElementById("colour-dock"),
+  innerSummarySwatch: document.getElementById("inner-summary-swatch"),
+  outerSummarySwatch: document.getElementById("outer-summary-swatch"),
   colourPlane: document.getElementById("colour-plane"),
   colourPlaneMarker: document.getElementById("colour-plane-marker"),
   colourLightness: document.getElementById("colour-lightness"),
@@ -739,6 +744,12 @@ bindRange(elements.ribbonWidth, "ribbonWidth");
 bindRange(elements.amplitude, "amplitude");
 bindRange(elements.waves, "waves");
 bindRange(elements.crenellationShape, "crenellationShape");
+
+// On narrow screens, show the artwork and geometry sliders first.
+// The native disclosure preserves its state when the viewport later changes.
+if (window.matchMedia("(min-width: 901px)").matches) {
+  elements.colourDock.open = true;
+}
 
 setCompleteColourState(state.innerColour, state.outerColour);
 bindColourPlane();
