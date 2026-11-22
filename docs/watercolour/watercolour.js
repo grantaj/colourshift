@@ -169,6 +169,27 @@ function syncPlanePositionsFromColours() {
   }
 }
 
+function ensureColourPlaneCells() {
+  if (elements.colourPlane.childElementCount > 0) {
+    return;
+  }
+
+  const cells = 24;
+  const cellSize = 100 / cells;
+  for (let y = 0; y < cells; y += 1) {
+    for (let x = 0; x < cells; x += 1) {
+      const rect = document.createElementNS(SVG_NS, "rect");
+      rect.setAttribute("x", String(x * cellSize));
+      rect.setAttribute("y", String(y * cellSize));
+      rect.setAttribute("width", String(cellSize + 0.05));
+      rect.setAttribute("height", String(cellSize + 0.05));
+      rect.dataset.colourPlaneX = String(x);
+      rect.dataset.colourPlaneY = String(y);
+      elements.colourPlane.appendChild(rect);
+    }
+  }
+}
+
 function drawColourPlane(force = false) {
   const lab = colourLab(selectedColourKey);
   const lightness = fixedColourLightness[selectedColourKey] ?? lab.L;
@@ -177,34 +198,19 @@ function drawColourPlane(force = false) {
     return;
   }
 
+  ensureColourPlaneCells();
+
   const cells = 24;
-  const rects = [];
-  const cellSize = 100 / cells;
-
-  for (let y = 0; y < cells; y += 1) {
+  for (const rect of elements.colourPlane.children) {
+    const x = Number(rect.dataset.colourPlaneX);
+    const y = Number(rect.dataset.colourPlaneY);
+    const a = OKLAB_RANGE * (2 * (x + 0.5) / cells - 1);
     const b = OKLAB_RANGE * (1 - 2 * (y + 0.5) / cells);
-    for (let x = 0; x < cells; x += 1) {
-      const a = OKLAB_RANGE * (2 * (x + 0.5) / cells - 1);
-      const colour = rgbToHex(gamutMappedOklab(lightness, a, b));
-      rects.push(
-        '<rect x="' + (x * cellSize) +
-        '" y="' + (y * cellSize) +
-        '" width="' + (cellSize + 0.05) +
-        '" height="' + (cellSize + 0.05) +
-        '" fill="' + colour + '"/>',
-      );
-    }
+    rect.setAttribute(
+      "fill",
+      rgbToHex(gamutMappedOklab(lightness, a, b)),
+    );
   }
-
-  const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" ' +
-    'preserveAspectRatio="none">' +
-    rects.join("") +
-    '</svg>';
-  elements.colourPlane.style.backgroundImage =
-    'url("data:image/svg+xml;charset=utf-8,' +
-    encodeURIComponent(svg) +
-    '")';
 
   renderedPlaneLightness = lightness;
 }
@@ -772,13 +778,3 @@ elements.saveSvg.addEventListener("click", downloadSvg);
 
 render();
 
-window.requestAnimationFrame(function () {
-  renderedPlaneLightness = null;
-  drawColourPlane(true);
-  updateColourPlaneMarker();
-  elements.colourLightness.value = String(
-    fixedColourLightness[selectedColourKey],
-  );
-  elements.colourLightnessValue.value =
-    fixedColourLightness[selectedColourKey].toFixed(2);
-});
