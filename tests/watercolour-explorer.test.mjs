@@ -54,8 +54,8 @@ test("explorer stays focused on manual stimulus exploration", async () => {
   assert.ok(!js.includes("openPairwiseTest"));
   assert.ok(!js.includes("blueYellow"));
   assert.ok(!js.includes("redCyan"));
-  assert.match(html, /href="watercolour\.css\?v=7"/);
-  assert.match(html, /src="watercolour\.js\?v=19"/);
+  assert.match(html, /href="watercolour\.css\?v=8"/);
+  assert.match(html, /src="watercolour\.js\?v=20"/);
 });
 
 
@@ -380,4 +380,21 @@ test("default colour plane is painted before JavaScript and remains live", async
   assert.match(html, /id="colour-lightness"[^>]*[\s\S]*?value="0\.7495"/);
   assert.match(js, /function drawColourPlane\(\)[\s\S]*?rect\.setAttribute\(\s*"fill"/);
   assert.match(js, /function syncColourDock\(\)[\s\S]*?drawColourPlane\(\)/);
+});
+
+
+test("lightness editing is isolated to selected colour and clearly labelled", async () => {
+  const html = await readFile(new URL("../docs/watercolour/index.html", import.meta.url), "utf8");
+  const js = await readFile(new URL("../docs/watercolour/watercolour.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../docs/watercolour/watercolour.css", import.meta.url), "utf8");
+
+  assert.match(html, /id="edit-inner" class="colour-target active"[^>]*aria-pressed="true"/);
+  assert.match(html, /id="edit-outer" class="colour-target"[^>]*aria-pressed="false"/);
+  assert.match(html, /id="colour-lightness-label" for="colour-lightness">Inner lightness/);
+  assert.match(css, /\.colour-target\[aria-pressed="true"\][\s\S]*?background: var\(--accent\)/);
+  assert.match(js, /function syncSelectedColourOnly\(\)/);
+  assert.match(js, /\["outerInducing", "innerInducing"\]|\[elements\.outerInducing, elements\.innerInducing\]/);
+  assert.match(js, /\[elements\.outerBarrier, elements\.innerBarrier\]/);
+  assert.match(js, /function setSelectedLightness\(value\)[\s\S]*?syncSelectedColourOnly\(\)/);
+  assert.match(js, /function resetExplorer\(\) \{\s*selectedColourKey = "innerColour"/);
 });
