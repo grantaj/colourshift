@@ -391,7 +391,8 @@ test("lightness editing is isolated to selected colour and clearly labelled", as
   assert.match(html, /id="edit-inner" class="colour-target active"[^>]*aria-pressed="true"/);
   assert.match(html, /id="edit-outer" class="colour-target"[^>]*aria-pressed="false"/);
   assert.match(html, /id="colour-lightness-label" for="colour-lightness">Inner lightness/);
-  assert.match(css, /\.colour-target\[aria-pressed="true"\][\s\S]*?background: var\(--accent\)/);
+  assert.match(html, /id="edit-inner"[^>]*aria-pressed="true"[\s\S]*?class="target-selection-dot"/);
+  assert.match(css, /\.colour-target\[aria-pressed="true"\] \.target-selection-dot::after \{\s*opacity: 1/);
   assert.match(js, /function syncSelectedColourOnly\(\)/);
   assert.match(js, /\["outerInducing", "innerInducing"\]|\[elements\.outerInducing, elements\.innerInducing\]/);
   assert.match(js, /\[elements\.outerBarrier, elements\.innerBarrier\]/);
