@@ -1,0 +1,114 @@
+import assert from "node:assert/strict";
+import { spawn, spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import test from "node:test";
+
+const ROOT = new URL("../docs/watercolour/", import.meta.url);
+const FILES = {
+  "/": "index.html",
+  "/watercolour.js": "watercolour.js",
+  "/geometry.mjs": "geometry.mjs",
+  "/watercolour.css": "watercolour.css",
+};
+
+const PROBE = [
+  'document.addEventListener("DOMContentLoaded", function () {',
+  ' const plane = document.getElementById("colour-plane");',
+  ' const fills = () => Array.from(plane.querySelectorAll("rect"), el => el.getAttribute("fill"));',
+  ' const before = fills();',
+  ' const first = plane.querySelector("rect");',
+  ' const painted = first && getComputedStyle(first).fill;',
+  ' const firstWidth = first && first.getBoundingClientRect().width;',
+  ' const initialLightness = Number(document.getElementById("colour-lightness").value);',
+  ' document.getElementById("edit-outer").click();',
+  ' const outer = fills();',
+  ' document.getElementById("edit-inner").click();',
+  ' const again = fills();',
+  ' const report = { count: before.length,',
+  '   populated: before.every(c => /^#[0-9a-f]{6}$/.test(c)),',
+  '   changedOnOuter: before.some((c, i) => c !== outer[i]),',
+  '   restored: before.length === again.length && before.every((c, i) => c === again[i]),',
+  '   initialLightness,',
+  '   firstWidth, painted,',
+  '   selectedInner: document.getElementById("edit-inner").getAttribute("aria-pressed") === "true"',
+  ' };',
+  ' const result = document.createElement("pre");',
+  ' result.id = "browser-probe-result"; result.textContent = JSON.stringify(report);',
+  ' document.body.appendChild(result);',
+  '});',
+].join("\n");
+
+function findBrowser() {
+  for (const name of [
+    process.env.CHROME_BIN,
+    "google-chrome",
+    "google-chrome-stable",
+    "chromium",
+    "chromium-browser",
+  ]) {
+    if (name && spawnSync("which", [name], { stdio: "ignore" }).status === 0) {
+      return name;
+    }
+  }
+  return null;
+}
+
+test("Chromium paints the default chooser and preserves it across Outer → Inner", async (t) => {
+  const browser = findBrowser();
+  assert.ok(browser, "Chromium or Google Chrome must be installed for the browser smoke test");
+
+  const server = createServer(async (req, res) => {
+    const path = new URL(req.url, "http://localhost").pathname;
+    const name = FILES[path];
+    if (!name) {
+      res.writeHead(404).end();
+      return;
+    }
+    try {
+      let content = await readFile(new URL(name, ROOT), "utf8");
+      if (name === "index.html") {
+        // Avoid an external font download delaying the browser smoke test.
+        content = content.replace(/<link rel="stylesheet" href="https:\/\/cdn\.jsdelivr\.net[^"]*" \/>/, "");
+        content = content.replace("</body>", "<script>" + PROBE + "</script></body>");
+      }
+      res.setHeader(
+        "Content-Type",
+        name.endsWith(".html") ? "text/html" : name.endsWith(".css") ? "text/css" : "text/javascript",
+      );
+      res.end(content);
+    } catch (error) {
+      res.writeHead(500).end(String(error));
+    }
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+
+  const url = "http://127.0.0.1:" + server.address().port + "/";
+  const result = await new Promise((resolve, reject) => {
+    const child = spawn(browser, [
+      "--headless", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
+      "--disable-background-networking", "--no-first-run", "--virtual-time-budget=5000",
+      "--window-size=390,844", "--dump-dom", url,
+    ]);
+    let stdout = "", stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", chunk => { stdout += chunk; });
+    child.stderr.on("data", chunk => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", code => resolve({ code, stdout, stderr }));
+  });
+  assert.equal(result.code, 0, result.stderr.slice(-1000));
+  const match = result.stdout.match(/<pre id="browser-probe-result">([^<]*)<\/pre>/);
+  assert.ok(match, "Browser probe did not run; inspect browser console and module loading");
+  const report = JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
+  assert.equal(report.count, 576);
+  assert.ok(report.populated);
+  assert.ok(report.firstWidth > 0, "SVG cells must be visible");
+  assert.match(report.painted, /^rgb\(/);
+  assert.ok(report.initialLightness > 0.74 && report.initialLightness < 0.76);
+  assert.ok(report.changedOnOuter);
+  assert.ok(report.restored);
+  assert.ok(report.selectedInner);
+});
