@@ -272,15 +272,23 @@ test("initial colour controls use the same complete state as presets", async () 
 });
 
 
-test("initial colours initialize marker positions and lightness through the same path as presets", async () => {
+test("startup, reset, and presets share the complete colour-state helper", async () => {
   const js = await readFile(
     new URL("../docs/watercolour/watercolour.js", import.meta.url),
     "utf8",
   );
 
-  assert.match(js, /function initialiseColourControlsFromState/);
-  assert.match(js, /setColourControlState\("innerColour", state\.innerColour\)/);
-  assert.match(js, /setColourControlState\("outerColour", state\.outerColour\)/);
-  assert.match(js, /initialiseColourControlsFromState\(\);[\s\S]*bindColourPlane\(\)/);
-  assert.match(js, /function resetExplorer\(\)[\s\S]*initialiseColourControlsFromState\(\)/);
+  assert.match(
+    js,
+    /setCompleteColourState\(state\.innerColour, state\.outerColour\);[\s\S]*bindColourPlane\(\)/,
+  );
+  assert.match(
+    js,
+    /function resetExplorer\(\)[\s\S]*setCompleteColourState\(state\.innerColour, state\.outerColour\)/,
+  );
+  assert.match(
+    js,
+    /setCompleteColourState\(preset\.innerColour, preset\.outerColour\)/,
+  );
+  assert.ok(!js.includes("initialiseColourControlsFromState"));
 });
