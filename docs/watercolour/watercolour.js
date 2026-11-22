@@ -233,6 +233,9 @@ function syncColourDock() {
   elements.outerSwatch.style.background = state.outerColour;
   const selectedLightness =
     fixedColourLightness[selectedColourKey] ?? colourLab(selectedColourKey).L;
+  elements.colourLightnessLabel.textContent = selectedColourKey === "innerColour"
+    ? "Inner lightness"
+    : "Outer lightness";
   elements.colourLightness.value = String(selectedLightness);
   elements.colourLightnessValue.value = selectedLightness.toFixed(2);
 
@@ -256,6 +259,18 @@ function selectColour(key) {
   syncColourDock();
 }
 
+function syncSelectedColourOnly() {
+  // Colour edits must not rewrite or repaint the unselected colour's SVG strokes.
+  const strokes = selectedColourKey === "innerColour"
+    ? [elements.outerInducing, elements.innerInducing]
+    : [elements.outerBarrier, elements.innerBarrier];
+  for (const stroke of strokes) {
+    stroke.setAttribute("stroke", state[selectedColourKey]);
+  }
+  syncPresetButtons();
+  syncColourDock();
+}
+
 function setSelectedLightness(value) {
   const lab = colourLab(selectedColourKey);
   const L = clamp(Number(value), 0.2, 0.9);
@@ -263,7 +278,7 @@ function setSelectedLightness(value) {
   state[selectedColourKey] = rgbToHex(
     gamutMappedOklab(L, lab.a, lab.b),
   );
-  render();
+  syncSelectedColourOnly();
 }
 
 function setColourFromPlaneEvent(event) {
@@ -277,7 +292,7 @@ function setColourFromPlaneEvent(event) {
   colourPlanePosition[selectedColourKey] = { x, y };
   setColourPlaneMarkerPosition(x, y);
   state[selectedColourKey] = rgbToHex(gamutMappedOklab(L, a, b));
-  render();
+  syncSelectedColourOnly();
 }
 
 function bindColourPlane() {
@@ -327,6 +342,7 @@ const elements = {
   colourPlane: document.getElementById("colour-plane"),
   colourPlaneMarker: document.getElementById("colour-plane-marker"),
   colourLightness: document.getElementById("colour-lightness"),
+  colourLightnessLabel: document.getElementById("colour-lightness-label"),
   colourLightnessValue: document.getElementById("colour-lightness-value"),
   editInner: document.getElementById("edit-inner"),
   editOuter: document.getElementById("edit-outer"),
@@ -435,6 +451,16 @@ function activePresetName() {
   return null;
 }
 
+function syncPresetButtons() {
+  const activePreset = activePresetName();
+  for (const [name, element] of [
+    ["blueGreen", elements.presetBlueGreen],
+    ["redYellow", elements.presetRedYellow],
+  ]) {
+    element.classList.toggle("active", activePreset === name);
+  }
+}
+
 function syncControlsFromState() {
   elements.radius.value = String(state.radius);
   elements.fieldWidth.value = String(state.fieldWidth);
@@ -466,14 +492,7 @@ function syncControlsFromState() {
   elements.wavesValue.value =
     formatValue(state.waves, 2) + " · λ ≈ " + formatValue(wavelength, 0);
 
-  const activePreset = activePresetName();
-  for (const [name, element] of [
-    ["blueGreen", elements.presetBlueGreen],
-    ["redYellow", elements.presetRedYellow],
-  ]) {
-    element.classList.toggle("active", activePreset === name);
-  }
-
+  syncPresetButtons();
   syncColourDock();
 }
 
@@ -608,6 +627,7 @@ function syncFocusMode() {
 }
 
 function resetExplorer() {
+  selectedColourKey = "innerColour";
   Object.assign(state, DEFAULT_STATE);
   setCompleteColourState(state.innerColour, state.outerColour);
   render();
