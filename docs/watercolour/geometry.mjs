@@ -255,15 +255,15 @@ export function sampleBoundary(
       arcFraction,
       normalStep,
     );
-    const position = waveCount * arcFraction;
-    const cycle = Math.min(waveCount - 1, Math.floor(position));
-    const localPhase = 2 * Math.PI * (position - cycle);
-    const phase = compensate
+    const phase = 2 * Math.PI * waveCount * arcFraction;
+    const cycle = Math.min(waveCount - 1, Math.floor(phase / (2 * Math.PI)));
+    const localPhase = phase - 2 * Math.PI * cycle;
+    const correctedPhase = compensate
       ? localPhase +
         phaseCompensation[cycle] * interpolatePrimitive(localPhase, primitive)
       : localPhase;
     const displacement =
-      amplitude * crenellationWave(phase, crenellationShape);
+      amplitude * crenellationWave(correctedPhase, crenellationShape);
 
     return [
       radius * base[0] + displacement * normal[0],
